@@ -10,50 +10,34 @@ export async function POST(req: NextRequest) {
   }
 
   if (mode === 'register') {
-    if (!name || name.length < 2) {
+    if (!name || name.trim().length < 2) {
       return NextResponse.json({ error: 'Nombre requerido' }, { status: 400 })
     }
-    // Check name not taken
     const { data: existing } = await supabase
-      .from('collaborators')
-      .select('id')
-      .ilike('name', name)
-      .single()
-
+      .from('collaborators').select('id').ilike('name', name.trim()).single()
     if (existing) {
       return NextResponse.json({ error: 'Ese nombre ya está registrado' }, { status: 400 })
     }
-
     const pin_hash = await bcrypt.hash(pin, 10)
     const { data, error } = await supabase
-      .from('collaborators')
-      .insert({ name, pin_hash })
-      .select('id, name')
-      .single()
-
+      .from('collaborators').insert({ name: name.trim(), pin_hash }).select('id, name').single()
     if (error) return NextResponse.json({ error: 'Error al registrar' }, { status: 500 })
     return NextResponse.json({ collaborator: data })
   }
 
-  // Login mode: find by name
-  if (!name || name.length < 2) {
-    return NextResponse.json({ error: 'Ingresá tu nombre' }, { status: 400 })
+  // Login: busca por PIN entre todos los colaboradores
+  const { data: all, error } = await supabase
+    .from('collaborators').select('id, name, pin_hash')
+  if (error || !all) {
+    return NextResponse.json({ error: 'Error al conectar' }, { status: 500 })
   }
 
-  const { data: collaborator } = await supabase
-    .from('collaborators')
-    .select('id, name, pin_hash')
-    .ilike('name', name)
-    .single()
-
-  if (!collaborator) {
-    return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+  for (const c of all) {
+    const valid = await bcrypt.compare(pin, c.pin_hash)
+    if (valid) {
+      return NextResponse.json({ collaborator: { id: c.id, name: c.name } })
+    }
   }
 
-  const valid = await bcrypt.compare(pin, collaborator.pin_hash)
-  if (!valid) {
-    return NextResponse.json({ error: 'PIN incorrecto' }, { status: 401 })
-  }
-
-  return NextResponse.json({ collaborator: { id: collaborator.id, name: collaborator.name } })
+  return NextResponse.json({ error: 'PIN incorrecto' }, { status: 401 })
 }
