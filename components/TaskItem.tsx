@@ -1,21 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { Task } from '@/lib/types'
-
-const DEFAULT_TAGS = ['General', 'Urgente', 'Reunión', 'Informe', 'Soporte', 'Cierre']
-
-const TAG_COLORS: Record<string, { bg: string; color: string }> = {
-  General:  { bg: '#F1EFE8', color: '#444441' },
-  Urgente:  { bg: '#FAEEDA', color: '#854F0B' },
-  Reunión:  { bg: '#CECBF6', color: '#3C3489' },
-  Informe:  { bg: '#E6F1FB', color: '#185FA5' },
-  Soporte:  { bg: '#EAF3DE', color: '#3B6D11' },
-  Cierre:   { bg: '#FBEAF0', color: '#72243E' },
-}
-
-function tagStyle(tag: string) {
-  return TAG_COLORS[tag] || { bg: '#F1EFE8', color: '#444441' }
-}
+import { HOURS, MINUTES, calcDuration, formatDuration, tagStyle } from '@/lib/types'
 
 interface Props {
   task: Task
@@ -27,25 +13,30 @@ interface Props {
 export default function TaskItem({ task, onToggle, onUpdate, onDelete }: Props) {
   const [editing, setEditing] = useState(false)
   const [title, setTitle] = useState(task.title)
-  const [hours, setHours] = useState(task.hours)
-  const [tag, setTag] = useState(task.tag)
+  const [startH, setStartH] = useState(task.start_time?.slice(0, 2) || '09')
+  const [startM, setStartM] = useState(task.start_time?.slice(3, 5) || '00')
+  const [endH, setEndH] = useState(task.end_time?.slice(0, 2) || '10')
+  const [endM, setEndM] = useState(task.end_time?.slice(3, 5) || '00')
   const [notes, setNotes] = useState(task.notes || '')
-  const [showNewTag, setShowNewTag] = useState(false)
-  const [newTagInput, setNewTagInput] = useState('')
-  const [customTags, setCustomTags] = useState<string[]>([])
+  const [editError, setEditError] = useState('')
 
-  const allTags = [...DEFAULT_TAGS, ...customTags]
   const font = { fontFamily: 'Montserrat, sans-serif' }
   const tc = tagStyle(task.tag)
 
-  function addCustomTag() {
-    const t = newTagInput.trim()
-    if (t && !allTags.includes(t)) { setCustomTags(p => [...p, t]); setTag(t) }
-    setNewTagInput(''); setShowNewTag(false)
-  }
+  const startTime = `${startH}:${startM}`
+  const endTime = `${endH}:${endM}`
+  const editDuration = calcDuration(startTime, endTime)
+
+  const displayDuration = task.start_time && task.end_time
+    ? formatDuration(task.start_time, task.end_time)
+    : null
+
+  const selectStyle = { padding: '5px 7px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 13, outline: 'none', background: 'white', cursor: 'pointer', ...font }
 
   function saveEdit() {
-    onUpdate(task.id, { title, hours, tag, notes })
+    setEditError('')
+    if (!editDuration) { setEditError('El fin debe ser posterior al inicio'); return }
+    onUpdate(task.id, { title, start_time: startTime, end_time: endTime, notes })
     setEditing(false)
   }
 
@@ -53,45 +44,50 @@ export default function TaskItem({ task, onToggle, onUpdate, onDelete }: Props) 
     return (
       <div style={{ background: 'white', borderRadius: 12, border: '0.5px solid #AFA9EC', padding: '12px 14px', marginBottom: 8, ...font }}>
         <input value={title} onChange={e => setTitle(e.target.value)}
-          style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 14, marginBottom: 8, outline: 'none', ...font }} />
-        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ fontSize: 11, color: '#888780', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3, fontWeight: 500 }}>
-              <i className="ti ti-hourglass" style={{ fontSize: 12 }} /> Horas
-            </label>
-            <input type="number" value={hours} onChange={e => setHours(Number(e.target.value))} min={0} max={24} step={0.5}
-              style={{ width: '100%', padding: '6px 8px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 14, outline: 'none', ...font }} />
-          </div>
-          <div style={{ flex: 2 }}>
-            <label style={{ fontSize: 11, color: '#888780', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3, fontWeight: 500 }}>
-              <i className="ti ti-tag" style={{ fontSize: 12 }} /> Etiqueta
-            </label>
-            <div style={{ display: 'flex', gap: 5 }}>
-              <select value={tag} onChange={e => setTag(e.target.value)}
-                style={{ flex: 1, padding: '6px 8px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 14, outline: 'none', background: 'white', ...font }}>
-                {allTags.map(t => <option key={t}>{t}</option>)}
+          style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 14, marginBottom: 10, outline: 'none', ...font }} />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
+          <div>
+            <label style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'block', marginBottom: 4 }}>Inicio</label>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <select value={startH} onChange={e => setStartH(e.target.value)} style={{ ...selectStyle, flex: 1 }}>
+                {HOURS.map(h => <option key={h}>{h}</option>)}
               </select>
-              <button type="button" onClick={() => setShowNewTag(v => !v)}
-                style={{ padding: '6px 9px', borderRadius: 7, border: '0.5px solid #d3d1c7', background: showNewTag ? '#CECBF6' : 'white', cursor: 'pointer', color: '#534AB7' }}>
-                <i className="ti ti-tag-plus" style={{ fontSize: 14 }} />
-              </button>
+              <span style={{ color: '#888780' }}>:</span>
+              <select value={startM} onChange={e => setStartM(e.target.value)} style={{ ...selectStyle, flex: 1 }}>
+                {MINUTES.map(m => <option key={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'block', marginBottom: 4 }}>Fin</label>
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              <select value={endH} onChange={e => setEndH(e.target.value)} style={{ ...selectStyle, flex: 1 }}>
+                {HOURS.map(h => <option key={h}>{h}</option>)}
+              </select>
+              <span style={{ color: '#888780' }}>:</span>
+              <select value={endM} onChange={e => setEndM(e.target.value)} style={{ ...selectStyle, flex: 1 }}>
+                {MINUTES.map(m => <option key={m}>{m}</option>)}
+              </select>
             </div>
           </div>
         </div>
-        {showNewTag && (
-          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
-            <input value={newTagInput} onChange={e => setNewTagInput(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addCustomTag() } }}
-              placeholder="Nueva etiqueta" autoFocus
-              style={{ flex: 1, padding: '6px 10px', borderRadius: 7, border: '0.5px solid #AFA9EC', fontSize: 13, outline: 'none', ...font }} />
-            <button type="button" onClick={addCustomTag}
-              style={{ padding: '6px 12px', borderRadius: 7, border: 'none', background: '#534AB7', color: 'white', fontSize: 12, cursor: 'pointer', ...font }}>
-              OK
-            </button>
+
+        {editDuration ? (
+          <div style={{ fontSize: 11, color: '#3B6D11', background: '#EAF3DE', padding: '3px 8px', borderRadius: 20, display: 'inline-block', marginBottom: 8 }}>
+            Duración: {formatDuration(startTime, endTime)}
+          </div>
+        ) : (
+          <div style={{ fontSize: 11, color: '#A32D2D', background: '#FCEBEB', padding: '3px 8px', borderRadius: 20, display: 'inline-block', marginBottom: 8 }}>
+            El fin debe ser posterior al inicio
           </div>
         )}
+
         <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notas (opcional)"
-          rows={2} style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 13, outline: 'none', resize: 'vertical', marginBottom: 8, ...font }} />
+          rows={2} style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 13, outline: 'none', resize: 'vertical', marginBottom: 8, display: 'block', ...font }} />
+
+        {editError && <div style={{ fontSize: 12, color: '#A32D2D', marginBottom: 8 }}>{editError}</div>}
+
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={saveEdit}
             style={{ flex: 1, padding: '7px', borderRadius: 7, border: 'none', background: '#534AB7', color: 'white', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, ...font }}>
@@ -118,14 +114,30 @@ export default function TaskItem({ task, onToggle, onUpdate, onDelete }: Props) 
           {task.title}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: tc.bg, color: tc.color, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 3 }}>
-            <i className="ti ti-tag" style={{ fontSize: 11 }} /> {task.tag}
-          </span>
-          {task.hours > 0 && (
-            <span style={{ fontSize: 11, color: '#888780', display: 'flex', alignItems: 'center', gap: 3 }}>
-              <i className="ti ti-hourglass" style={{ fontSize: 11 }} /> {task.hours}h
+          {/* Time range */}
+          {task.start_time && task.end_time && (
+            <span style={{ fontSize: 11, color: '#534AB7', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+              <i className="ti ti-clock" style={{ fontSize: 11 }} />
+              {task.start_time.slice(0, 5)} – {task.end_time.slice(0, 5)}
             </span>
           )}
+          {/* Duration */}
+          {displayDuration && (
+            <span style={{ fontSize: 11, background: '#EAF3DE', color: '#3B6D11', padding: '1px 7px', borderRadius: 20, fontWeight: 600 }}>
+              {displayDuration}
+            </span>
+          )}
+          {/* Tag */}
+          <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: tc.bg, color: tc.color, fontWeight: 500 }}>
+            {task.tag}
+          </span>
+          {/* Systems */}
+          {task.systems?.length > 0 && task.systems.map(s => (
+            <span key={s} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, background: '#E6F1FB', color: '#185FA5', fontWeight: 500 }}>
+              {s}
+            </span>
+          ))}
+          {/* Notes indicator */}
           {task.notes && (
             <span style={{ fontSize: 11, color: '#b4b2a9', display: 'flex', alignItems: 'center', gap: 3 }} title={task.notes}>
               <i className="ti ti-note" style={{ fontSize: 11 }} /> nota
