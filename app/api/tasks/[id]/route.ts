@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+type RouteContext = { params: Promise<{ id: string }> }
+
+export async function PATCH(req: NextRequest, context: RouteContext) {
+  const { id } = await context.params
   const body = await req.json()
   const updates: Record<string, unknown> = {}
 
@@ -15,18 +18,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if ('notes' in body) updates.notes = body.notes
 
   const { data, error } = await supabase
-    .from('tasks')
-    .update(updates)
-    .eq('id', params.id)
-    .select()
-    .single()
+    .from('tasks').update(updates).eq('id', id).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
 }
 
-export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
-  const { error } = await supabase.from('tasks').delete().eq('id', params.id)
+export async function DELETE(_: NextRequest, context: RouteContext) {
+  const { id } = await context.params
+  const { error } = await supabase.from('tasks').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
