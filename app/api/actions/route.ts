@@ -18,11 +18,17 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const { collaborator_id, system, action, date } = await req.json()
+  const { collaborator_id, system, action, date, invoice_number } = await req.json()
   if (!collaborator_id || !system || !action) return NextResponse.json({ error: 'Datos incompletos' }, { status: 400 })
   const { data, error } = await supabase
     .from('invoice_actions')
-    .insert({ collaborator_id, system, action, date: date || new Date().toISOString().split('T')[0] })
+    .insert({
+      collaborator_id,
+      system,
+      action,
+      date: date || new Date().toISOString().split('T')[0],
+      invoice_number: invoice_number || null,
+    })
     .select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)

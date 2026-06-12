@@ -239,7 +239,7 @@ export default function Dashboard() {
                 <div style={{ fontSize: 11, fontWeight: 600, color: '#888780', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <i className="ti ti-list" style={{ fontSize: 13 }} /> Tareas del día
                 </div>
-                {tasks.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} />)}
+                {tasks.map(t => <TaskItem key={t.id} task={t} onUpdate={updateTask} onDelete={deleteTask} />)}
               </div>
             )}
 
