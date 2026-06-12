@@ -6,12 +6,13 @@ import { calcDuration } from '@/lib/types'
 import TaskItem from '@/components/TaskItem'
 import AddTaskForm from '@/components/AddTaskForm'
 import WeeklySummary from '@/components/WeeklySummary'
+import InvoiceActions from '@/components/InvoiceActions'
 
-type View = 'daily' | 'weekly'
+type View = 'daily' | 'weekly' | 'invoices'
 
-const WORK_START = 9 * 60   // 09:00 in minutes
-const WORK_END = 18 * 60    // 18:00 in minutes
-const WORK_TOTAL = WORK_END - WORK_START // 540 min = 9h
+const WORK_START = 9 * 60
+const WORK_END = 18 * 60
+const WORK_TOTAL = WORK_END - WORK_START
 
 function offsetDate(base: string, days: number) {
   const d = new Date(base + 'T12:00:00')
@@ -96,7 +97,7 @@ export default function Dashboard() {
 
   function handleExport() {
     if (!collaborator) return
-    window.open(`/api/export?collaborator_id=${collaborator.id}&name=${encodeURIComponent(collaborator.name)}`, '_blank')
+    window.open(`/api/export?collaborator_id=${collaborator.id}&name=${encodeURIComponent(collaborator.name)}&date=${currentDate}`, '_blank')
   }
 
   function logout() {
@@ -104,7 +105,6 @@ export default function Dashboard() {
     router.push('/')
   }
 
-  // Calculate worked minutes (only tasks with valid times)
   const workedMin = tasks.reduce((sum, t) => {
     if (!t.start_time || !t.end_time) return sum
     const d = calcDuration(t.start_time, t.end_time)
@@ -114,34 +114,33 @@ export default function Dashboard() {
   const workedH = Math.floor(workedMin / 60)
   const workedM = workedMin % 60
   const workedLabel = workedM > 0 ? `${workedH}h ${workedM}min` : `${workedH}h`
-
   const uncoveredMin = Math.max(0, WORK_TOTAL - workedMin)
   const uncoveredH = Math.floor(uncoveredMin / 60)
   const uncoveredM = uncoveredMin % 60
   const uncoveredLabel = uncoveredM > 0 ? `${uncoveredH}h ${uncoveredM}min` : `${uncoveredH}h`
-
   const motivation = getMotivation(workedMin)
   const initials = collaborator?.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'
   const font = { fontFamily: 'Montserrat, sans-serif' }
 
-  // Timeline: compute covered intervals for the uncovered display
-  const coveredSlots = tasks
-    .filter(t => t.start_time && t.end_time)
+  const coveredSlots = tasks.filter(t => t.start_time && t.end_time)
     .map(t => ({ start: timeToMin(t.start_time!), end: timeToMin(t.end_time!) }))
-    .filter(s => s.end > s.start)
-    .sort((a, b) => a.start - b.start)
+    .filter(s => s.end > s.start).sort((a, b) => a.start - b.start)
 
-  // Build timeline segments (covered / uncovered)
-  type Segment = { from: number; to: number; covered: boolean }
-  const segments: Segment[] = []
+  type Seg = { from: number; to: number; covered: boolean }
+  const segments: Seg[] = []
   let cursor = WORK_START
   for (const slot of coveredSlots) {
-    const s = Math.max(slot.start, WORK_START)
-    const e = Math.min(slot.end, WORK_END)
+    const s = Math.max(slot.start, WORK_START), e = Math.min(slot.end, WORK_END)
     if (s > cursor) segments.push({ from: cursor, to: s, covered: false })
     if (e > cursor) { segments.push({ from: Math.max(cursor, s), to: e, covered: true }); cursor = e }
   }
   if (cursor < WORK_END) segments.push({ from: cursor, to: WORK_END, covered: false })
+
+  const VIEWS: { key: View; label: string; icon: string }[] = [
+    { key: 'daily', label: 'Diario', icon: 'ti-calendar-day' },
+    { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },
+    { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
+  ]
 
   if (!collaborator) return null
 
@@ -168,17 +167,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* View toggle */}
+        {/* View toggle — 3 tabs */}
         <div style={{ display: 'flex', background: 'white', borderRadius: 10, padding: 3, marginBottom: '1.25rem', border: '0.5px solid #e5e3db' }}>
-          {(['daily', 'weekly'] as View[]).map(v => (
-            <button key={v} onClick={() => setView(v)}
-              style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, background: view === v ? '#534AB7' : 'transparent', color: view === v ? 'white' : '#888780', transition: 'all 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...font }}>
-              <i className={`ti ${v === 'daily' ? 'ti-calendar-day' : 'ti-calendar-week'}`} style={{ fontSize: 15 }} />
-              {v === 'daily' ? 'Diario' : 'Semana'}
+          {VIEWS.map(v => (
+            <button key={v.key} onClick={() => setView(v.key)}
+              style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, background: view === v.key ? '#534AB7' : 'transparent', color: view === v.key ? 'white' : '#888780', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...font }}>
+              <i className={`ti ${v.icon}`} style={{ fontSize: 15 }} />
+              {v.label}
             </button>
           ))}
         </div>
 
+        {/* ── DAILY ── */}
         {view === 'daily' && (
           <>
             {/* Date navigator */}
@@ -188,30 +188,22 @@ export default function Dashboard() {
               </button>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 14, fontWeight: 600, textTransform: 'capitalize' }}>{formatDate(currentDate)}</div>
-                {currentDate !== today && (
-                  <div style={{ fontSize: 11, color: '#b4b2a9', fontWeight: 300 }}>
-                    {new Date(currentDate + 'T12:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </div>
-                )}
+                {currentDate !== today && <div style={{ fontSize: 11, color: '#b4b2a9', fontWeight: 300 }}>{new Date(currentDate + 'T12:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
               </div>
               <button onClick={() => setCurrentDate(d => offsetDate(d, 1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#534AB7', padding: '4px 8px', display: 'flex', alignItems: 'center' }}>
                 <i className="ti ti-chevron-right" style={{ fontSize: 18 }} />
               </button>
             </div>
 
-            {/* Hours stat + motivation */}
+            {/* Hours stats */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: '1.25rem' }}>
               <div style={{ background: 'white', borderRadius: 10, padding: '12px 14px', border: '0.5px solid #e5e3db' }}>
-                <div style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                  <i className="ti ti-hourglass-filled" style={{ fontSize: 13 }} /> Horas registradas
-                </div>
+                <div style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}><i className="ti ti-hourglass-filled" style={{ fontSize: 13 }} /> Horas registradas</div>
                 <div style={{ fontSize: 24, fontWeight: 600, color: '#534AB7' }}>{workedLabel || '0h'}</div>
                 <div style={{ fontSize: 11, color: '#b4b2a9', marginTop: 2 }}>de 9h laborales</div>
               </div>
               <div style={{ background: 'white', borderRadius: 10, padding: '12px 14px', border: '0.5px solid #e5e3db' }}>
-                <div style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                  <i className="ti ti-clock-x" style={{ fontSize: 13 }} /> Sin registrar
-                </div>
+                <div style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}><i className="ti ti-clock-x" style={{ fontSize: 13 }} /> Sin registrar</div>
                 <div style={{ fontSize: 24, fontWeight: 600, color: uncoveredMin === 0 ? '#0F6E56' : '#BA7517' }}>{uncoveredMin === 0 ? '0h' : uncoveredLabel}</div>
                 <div style={{ fontSize: 11, color: '#b4b2a9', marginTop: 2 }}>{tasks.length} tarea{tasks.length !== 1 ? 's' : ''} cargada{tasks.length !== 1 ? 's' : ''}</div>
               </div>
@@ -226,7 +218,7 @@ export default function Dashboard() {
                 </div>
                 <div style={{ height: 10, borderRadius: 99, background: '#f5f4f0', display: 'flex', overflow: 'hidden' }}>
                   {segments.map((seg, i) => (
-                    <div key={i} style={{ width: `${(seg.to - seg.from) / WORK_TOTAL * 100}%`, background: seg.covered ? '#534AB7' : '#f5f4f0', borderRadius: 0 }} />
+                    <div key={i} style={{ width: `${(seg.to - seg.from) / WORK_TOTAL * 100}%`, background: seg.covered ? '#534AB7' : '#f5f4f0' }} />
                   ))}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#b4b2a9', marginTop: 4 }}>
@@ -235,16 +227,16 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* Motivation banner */}
+            {/* Motivation */}
             <div style={{ background: motivation.bg, borderRadius: 10, padding: '10px 14px', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: 8 }}>
               <i className="ti ti-mood-smile" style={{ fontSize: 18, color: motivation.color }} />
               <span style={{ fontSize: 13, fontWeight: 500, color: motivation.color }}>{motivation.msg}</span>
             </div>
 
-            {/* Task list */}
+            {/* Tasks */}
             {tasks.length > 0 && (
               <div style={{ marginBottom: '1rem' }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: '#888780', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#888780', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
                   <i className="ti ti-list" style={{ fontSize: 13 }} /> Tareas del día
                 </div>
                 {tasks.map(t => <TaskItem key={t.id} task={t} onToggle={toggleTask} onUpdate={updateTask} onDelete={deleteTask} />)}
@@ -258,20 +250,37 @@ export default function Dashboard() {
               </div>
             )}
 
-            {showAddForm ? (
-              <AddTaskForm onAdd={addTask} onCancel={() => setShowAddForm(false)} />
-            ) : (
-              <button onClick={() => setShowAddForm(true)}
-                style={{ width: '100%', padding: '11px', borderRadius: 10, border: '0.5px dashed #b4b2a9', background: 'transparent', fontSize: 14, color: '#888780', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, ...font, fontWeight: 500 }}>
-                <i className="ti ti-plus" style={{ fontSize: 17 }} /> Registrar tarea
-              </button>
-            )}
+            {showAddForm
+              ? <AddTaskForm onAdd={addTask} onCancel={() => setShowAddForm(false)} />
+              : <button onClick={() => setShowAddForm(true)} style={{ width: '100%', padding: '11px', borderRadius: 10, border: '0.5px dashed #b4b2a9', background: 'transparent', fontSize: 14, color: '#888780', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, ...font, fontWeight: 500 }}>
+                  <i className="ti ti-plus" style={{ fontSize: 17 }} /> Registrar tarea
+                </button>
+            }
           </>
         )}
 
-        {view === 'weekly' && (
-          <WeeklySummary collaboratorId={collaborator.id} collaboratorName={collaborator.name} />
+        {/* ── WEEKLY ── */}
+        {view === 'weekly' && <WeeklySummary collaboratorId={collaborator.id} collaboratorName={collaborator.name} />}
+
+        {/* ── INVOICES ── */}
+        {view === 'invoices' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'white', borderRadius: 10, padding: '10px 14px', marginBottom: '1.25rem', border: '0.5px solid #e5e3db' }}>
+              <button onClick={() => setCurrentDate(d => offsetDate(d, -1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#534AB7', padding: '4px 8px', display: 'flex', alignItems: 'center' }}>
+                <i className="ti ti-chevron-left" style={{ fontSize: 18 }} />
+              </button>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 14, fontWeight: 600, textTransform: 'capitalize' }}>{formatDate(currentDate)}</div>
+                {currentDate !== today && <div style={{ fontSize: 11, color: '#b4b2a9', fontWeight: 300 }}>{new Date(currentDate + 'T12:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
+              </div>
+              <button onClick={() => setCurrentDate(d => offsetDate(d, 1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#534AB7', padding: '4px 8px', display: 'flex', alignItems: 'center' }}>
+                <i className="ti ti-chevron-right" style={{ fontSize: 18 }} />
+              </button>
+            </div>
+            <InvoiceActions collaboratorId={collaborator.id} currentDate={currentDate} />
+          </>
         )}
+
       </div>
     </div>
   )
