@@ -6,11 +6,21 @@ export async function POST(req: NextRequest) {
   const { name, pin, mode } = await req.json()
 
   if (!pin || pin.length < 4) return NextResponse.json({ error: 'PIN inválido' }, { status: 400 })
+  if (!name || name.trim().length < 2) return NextResponse.json({ error: 'Ingresá tu nombre' }, { status: 400 })
 
   if (mode === 'register') {
-    if (!name || name.trim().length < 2) return NextResponse.json({ error: 'Nombre requerido' }, { status: 400 })
-    const { data: existing } = await supabase.from('collaborators').select('id').ilike('name', name.trim()).single()
-    if (existing) return NextResponse.json({ error: 'Ese nombre ya está registrado' }, { status: 400 })
+    // Check name not taken
+    const { data: existingName } = await supabase
+      .from('collaborators').select('id').ilike('name', name.trim()).single()
+    if (existingName) return NextResponse.json({ error: 'Ese nombre ya está registrado' }, { status: 400 })
+
+    // Check PIN not taken by anyone
+    const { data: all } = await supabase.from('collaborators').select('pin_hash')
+    for (const c of all || []) {
+      const match = await bcrypt.compare(pin, c.pin_hash)
+      if (match) return NextResponse.json({ error: 'Ese PIN ya está en uso. Elegí otro.' }, { status: 400 })
+    }
+
     const pin_hash = await bcrypt.hash(pin, 10)
     const { data, error } = await supabase.from('collaborators')
       .insert({ name: name.trim(), pin_hash, role: 'collaborator' })
@@ -19,13 +29,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ collaborator: data })
   }
 
-  // Login by PIN
-  const { data: all, error } = await supabase.from('collaborators').select('id, name, pin_hash, role')
-  if (error || !all) return NextResponse.json({ error: 'Error al conectar' }, { status: 500 })
+  // Login: find by name first, then validate PIN
+  const { data: collaborator } = await supabase
+    .from('collaborators').select('id, name, pin_hash, role').ilike('name', name.trim()).single()
 
-  for (const c of all) {
-    const valid = await bcrypt.compare(pin, c.pin_hash)
-    if (valid) return NextResponse.json({ collaborator: { id: c.id, name: c.name, role: c.role } })
-  }
-  return NextResponse.json({ error: 'PIN incorrecto' }, { status: 401 })
+  if (!collaborator) return NextResponse.json({ error: 'Usuario no encontrado' }, { status: 404 })
+
+  const valid = await bcrypt.compare(pin, collaborator.pin_hash)
+  if (!valid) return NextResponse.json({ error: 'PIN incorrecto' }, { status: 401 })
+
+  return NextResponse.json({ collaborator: { id: collaborator.id, name: collaborator.name, role: collaborator.role } })
 }
