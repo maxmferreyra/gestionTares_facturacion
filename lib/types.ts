@@ -1,6 +1,7 @@
 export interface Collaborator {
   id: string
   name: string
+  role: 'collaborator' | 'supervisor'
   created_at: string
 }
 
@@ -20,31 +21,18 @@ export interface Task {
   created_at: string
 }
 
-export interface SystemCatalog {
-  id: string
-  name: string
-}
+export interface SystemCatalog { id: string; name: string }
+export interface TagCatalog { id: string; name: string }
 
-export interface TagCatalog {
-  id: string
-  name: string
-}
-
-export const HOURS = Array.from({ length: 10 }, (_, i) => {
-  const h = i + 9
-  return h.toString().padStart(2, '0')
-}) // 09..18
-
+export const HOURS = Array.from({ length: 10 }, (_, i) => (i + 9).toString().padStart(2, '0'))
 export const MINUTES = ['00', '15', '30', '45']
 
-export function calcDuration(start: string, end: string): { hours: number; minutes: number; total: number } | null {
+export function calcDuration(start: string, end: string) {
   if (!start || !end) return null
   const [sh, sm] = start.split(':').map(Number)
   const [eh, em] = end.split(':').map(Number)
-  const startMin = sh * 60 + sm
-  const endMin = eh * 60 + em
-  if (endMin <= startMin) return null
-  const diff = endMin - startMin
+  const diff = (eh * 60 + em) - (sh * 60 + sm)
+  if (diff <= 0) return null
   return { hours: Math.floor(diff / 60), minutes: diff % 60, total: diff / 60 }
 }
 
@@ -57,12 +45,12 @@ export function formatDuration(start: string, end: string): string {
 }
 
 export const TAG_COLORS: Record<string, { bg: string; color: string }> = {
-  General:  { bg: '#F1EFE8', color: '#444441' },
-  Urgente:  { bg: '#FAEEDA', color: '#854F0B' },
+  General:   { bg: '#F1EFE8', color: '#444441' },
+  Urgente:   { bg: '#FAEEDA', color: '#854F0B' },
   'Reunión': { bg: '#CECBF6', color: '#3C3489' },
-  Informe:  { bg: '#E6F1FB', color: '#185FA5' },
-  Soporte:  { bg: '#EAF3DE', color: '#3B6D11' },
-  Cierre:   { bg: '#FBEAF0', color: '#72243E' },
+  Informe:   { bg: '#E6F1FB', color: '#185FA5' },
+  Soporte:   { bg: '#EAF3DE', color: '#3B6D11' },
+  Cierre:    { bg: '#FBEAF0', color: '#72243E' },
 }
 
 export function tagStyle(tag: string) {

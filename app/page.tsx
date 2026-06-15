@@ -84,26 +84,26 @@ export default function LoginPage() {
 
   return (
     <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
-      <div style={{ width: '100%', maxWidth: 400, ...font }}>
+      <div style={{ width: '100%', maxWidth: 320, ...font }}>
 
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#CECBF6', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
             <i className="ti ti-checks" style={{ fontSize: 24, color: '#3C3489' }} />
           </div>
-          <h1 style={{ fontSize: 22, fontWeight: 600, marginBottom: 4, ...font }}>Control de tareas</h1>
-          <p style={{ fontSize: 13, color: '#888780', fontWeight: 300 }}>
+          <h1 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4, ...font }}>Control de tareas</h1>
+          <p style={{ fontSize: 12, color: '#888780', fontWeight: 300 }}>
             {mode === 'reset' ? 'Resetear PIN' : 'Ingresá con tu PIN personal'}
           </p>
         </div>
 
-        <div style={{ background: 'white', borderRadius: 16, border: '0.5px solid #e5e3db', padding: '1.5rem' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 16, border: '0.5px solid var(--border)', padding: '1.5rem' }}>
 
           {/* Tabs — solo login y register */}
           {mode !== 'reset' && (
             <div style={{ display: 'flex', background: '#f5f4f0', borderRadius: 10, padding: 3, marginBottom: '1.25rem' }}>
               {(['login', 'register'] as Mode[]).map(m => (
                 <button key={m} onClick={() => switchMode(m)}
-                  style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+                  style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
                     ...font,
                     background: mode === m ? 'white' : 'transparent',
                     color: mode === m ? '#1a1a18' : '#888780',
@@ -154,13 +154,13 @@ export default function LoginPage() {
             )}
 
             {error && (
-              <div style={{ background: '#FCEBEB', color: '#A32D2D', fontSize: 13, padding: '8px 12px', borderRadius: 8, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ background: '#FCEBEB', color: '#A32D2D', fontSize: 12, padding: '8px 12px', borderRadius: 8, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="ti ti-alert-circle" style={{ fontSize: 15 }} /> {error}
               </div>
             )}
 
             {success && (
-              <div style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 13, padding: '8px 12px', borderRadius: 8, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 12, padding: '8px 12px', borderRadius: 8, marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="ti ti-circle-check" style={{ fontSize: 15 }} /> {success}
               </div>
             )}
