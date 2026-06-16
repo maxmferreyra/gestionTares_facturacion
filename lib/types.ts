@@ -56,3 +56,21 @@ export const TAG_COLORS: Record<string, { bg: string; color: string }> = {
 export function tagStyle(tag: string) {
   return TAG_COLORS[tag] || { bg: '#F1EFE8', color: '#444441' }
 }
+
+// Fecha local (no UTC) — evita el bug de que después de las 21hs ARG muestre el día siguiente
+export function localToday(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = (d.getMonth() + 1).toString().padStart(2, '0')
+  const day = d.getDate().toString().padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+export function localOffsetDate(base: string, days: number): string {
+  const [y, m, d] = base.split('-').map(Number)
+  const date = new Date(y, m - 1, d + days)
+  const yy = date.getFullYear()
+  const mm = (date.getMonth() + 1).toString().padStart(2, '0')
+  const dd = date.getDate().toString().padStart(2, '0')
+  return `${yy}-${mm}-${dd}`
+}

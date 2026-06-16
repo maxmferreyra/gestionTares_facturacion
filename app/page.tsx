@@ -73,7 +73,7 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-          <img src="/logo-milo.png" alt="Milo" style={{ width: 130, height: 130, objectFit: 'contain', margin: '0 auto' }} />
+          <img src="/logo-milo.png" alt="Milo" style={{ width: 170, height: 170, objectFit: 'contain', margin: '0 auto' }} />
           <p style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 300, marginTop: -8 }}>
             {mode === 'reset' ? 'Resetear PIN' : 'Ingresá con tu nombre y PIN'}
           </p>

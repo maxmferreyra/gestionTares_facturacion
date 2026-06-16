@@ -61,7 +61,6 @@ export default function WeeklySummary({ collaboratorId, collaboratorName }: Prop
 
   const weekLabel = new Date(weekStart + 'T12:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
   const weekEndLabel = new Date(offsetDate(weekStart, 6) + 'T12:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long' })
-  const maxMin = Math.max(...days.map(d => d.minutes), 1)
 
   return (
     <div style={font}>
@@ -89,27 +88,6 @@ export default function WeeklySummary({ collaboratorId, collaboratorName }: Prop
             <i className="ti ti-hourglass" style={{ fontSize: 13 }} /> Horas
           </div>
           <div style={{ fontSize: 24, fontWeight: 600, color: '#534AB7' }}>{totalHoursLabel}</div>
-        </div>
-      </div>
-
-      {/* Bar chart */}
-      <div style={{ background: 'var(--card)', borderRadius: 12, border: '0.5px solid var(--border)', padding: '14px', marginBottom: '1rem' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 5 }}>
-          <i className="ti ti-chart-bar" style={{ fontSize: 13 }} /> Horas por día
-        </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end', height: 80 }}>
-          {days.map(d => {
-            const height = d.minutes > 0 ? Math.max((d.minutes / maxMin) * 64, 8) : 4
-            const isToday = d.date === today
-            const h = Math.floor(d.minutes / 60), m = d.minutes % 60
-            return (
-              <div key={d.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                <div style={{ fontSize: 9, color: 'var(--text4)', fontWeight: 500 }}>{d.minutes > 0 ? (m > 0 ? `${h}:${m.toString().padStart(2,'0')}` : `${h}h`) : ''}</div>
-                <div style={{ width: '100%', height, borderRadius: 4, background: d.minutes === 0 ? 'var(--bg)' : '#534AB7', opacity: isToday ? 1 : 0.55 }} />
-                <div style={{ fontSize: 10, color: isToday ? '#534AB7' : 'var(--text3)', fontWeight: isToday ? 600 : 400 }}>{d.label}</div>
-              </div>
-            )
-          })}
         </div>
       </div>
 

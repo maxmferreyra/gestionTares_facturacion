@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Task } from '@/lib/types'
-import { calcDuration } from '@/lib/types'
+import { calcDuration, localToday, localOffsetDate } from '@/lib/types'
 import TaskItem from '@/components/TaskItem'
 import AddTaskForm from '@/components/AddTaskForm'
 import WeeklySummary from '@/components/WeeklySummary'
@@ -18,12 +18,9 @@ type View = 'daily' | 'weekly' | 'invoices' | 'help' | 'supervisor'
 const WORK_START = 9 * 60, WORK_END = 18 * 60, WORK_TOTAL = WORK_END - WORK_START
 const INACTIVITY_LIMIT = 8 * 60 * 60 * 1000
 
-function offsetDate(base: string, days: number) {
-  const d = new Date(base + 'T12:00:00'); d.setDate(d.getDate() + days)
-  return d.toISOString().split('T')[0]
-}
+const offsetDate = localOffsetDate
 function formatDate(dateStr: string) {
-  const today = new Date().toISOString().split('T')[0]
+  const today = localToday()
   if (dateStr === today) return 'Hoy'
   if (dateStr === offsetDate(today, -1)) return 'Ayer'
   if (dateStr === offsetDate(today, 1)) return 'Mañana'
@@ -51,8 +48,8 @@ export default function Dashboard() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [showAvatar, setShowAvatar] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0])
-  const today = new Date().toISOString().split('T')[0]
+  const [currentDate, setCurrentDate] = useState(localToday())
+  const today = localToday()
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function resetInactivity() {
@@ -165,15 +162,16 @@ export default function Dashboard() {
 
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button onClick={() => setShowAvatar(true)} title="Cambiar avatar"
-              style={{ width: 38, height: 38, borderRadius: '50%', border: '2px solid #CECBF6', padding: 0, cursor: 'pointer', overflow: 'hidden', background: '#CECBF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              style={{ width: 52, height: 52, borderRadius: '50%', border: '2.5px solid #CECBF6', padding: 0, cursor: 'pointer', overflow: 'hidden', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               {collaborator.avatar
-                ? <img src={collaborator.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ fontSize: 12, fontWeight: 600, color: '#3C3489' }}>{initials}</span>}
+                ? <img src={collaborator.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#ffffff' }} />
+                : <span style={{ fontSize: 16, fontWeight: 600, color: '#3C3489' }}>{initials}</span>}
             </button>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>{collaborator.name}</div>
+              <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)', letterSpacing: '0.02em' }}>Milo</div>
+              <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>{collaborator.name}</div>
               <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 300 }}>{isSupervisor ? '⭐ Supervisor' : 'Colaborador'}</div>
             </div>
           </div>
@@ -282,6 +280,11 @@ export default function Dashboard() {
 
         {view === 'help' && <HelpSection />}
         {view === 'supervisor' && isSupervisor && <SupervisorDashboard />}
+      </div>
+
+      {/* Milo fijo esquina inferior derecha */}
+      <div style={{ position: 'fixed', bottom: 16, right: 16, width: 96, height: 96, borderRadius: '50%', background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(83,74,183,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 50 }}>
+        <img src="/milo-fijo.png" alt="Milo" style={{ width: 80, height: 'auto', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.2))' }} />
       </div>
     </div>
   )

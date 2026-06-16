@@ -28,17 +28,17 @@ export default function AvatarPicker({ collaboratorId, current, onSelect, onClos
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }} onClick={onClose}>
-      <div style={{ background: 'var(--card)', borderRadius: 16, padding: '1.5rem', maxWidth: 420, width: '100%', maxHeight: '85vh', overflowY: 'auto', ...font }} onClick={e => e.stopPropagation()}>
+      <div style={{ background: 'var(--card)', borderRadius: 16, padding: '1.5rem', maxWidth: 440, width: '100%', maxHeight: '85vh', overflowY: 'auto', ...font }} onClick={e => e.stopPropagation()}>
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
           <h2 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Elegí tu Milo favorito</h2>
           <p style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 300 }}>Personalizá tu perfil</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10, marginBottom: 16 }}>
           {AVATARS.map(a => (
             <button key={a} onClick={() => setSelected(a)}
-              style={{ padding: 2, borderRadius: '50%', border: `2.5px solid ${selected === a ? '#534AB7' : 'transparent'}`, background: 'transparent', cursor: 'pointer', aspectRatio: '1', overflow: 'hidden' }}>
-              <img src={a} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+              style={{ padding: 0, borderRadius: '50%', border: `2.5px solid ${selected === a ? '#534AB7' : 'var(--border)'}`, background: '#ffffff', cursor: 'pointer', aspectRatio: '1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img src={a} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'contain', display: 'block', background: '#ffffff' }} />
             </button>
           ))}
         </div>

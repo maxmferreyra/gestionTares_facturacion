@@ -3,7 +3,9 @@ export interface ActionItem {
   label: string
   sublabel?: string
   icon: string
-  reasons?: string[]  // optional dropdown of reasons
+  reasons?: string[]
+  reasonAllowsCustom?: boolean   // if a reason like "Otro" needs free text
+  transition?: boolean           // Coupa: two state selectors origin -> destination
 }
 
 export interface SystemConfig {
@@ -14,7 +16,9 @@ export interface SystemConfig {
   actions: ActionItem[]
 }
 
-// Basado en la hoja "Facturas" del Excel
+// Estados de Coupa (para los dos desplegables de transición)
+export const COUPA_STATES = ['Draft', 'Pending Approval', 'Approved', 'Disputed', 'Rejected', 'Pending Action', 'Void', 'Abandon']
+
 export const SYSTEMS_CONFIG: SystemConfig[] = [
   {
     key: 'brainware',
@@ -22,13 +26,14 @@ export const SYSTEMS_CONFIG: SystemConfig[] = [
     bg: '#E6F1FB',
     color: '#185FA5',
     actions: [
-      { key: 'correccion_aprobacion', label: 'Corrección de info y aprobación', icon: 'ti-circle-check' },
+      { key: 'validar_documento', label: 'Validar documento', icon: 'ti-circle-check' },
       {
         key: 'rechazo_documento',
         label: 'Rechazo documento',
         sublabel: 'Seleccioná la razón',
         icon: 'ti-file-x',
         reasons: ['Información incorrecta', 'PO cerrada', 'Documento inválido', 'PDF ilegible', 'Otro'],
+        reasonAllowsCustom: true,
       },
     ],
   },
@@ -38,14 +43,7 @@ export const SYSTEMS_CONFIG: SystemConfig[] = [
     bg: '#CECBF6',
     color: '#3C3489',
     actions: [
-      { key: 'draft', label: 'Draft', icon: 'ti-file-pencil' },
-      { key: 'pending_approval', label: 'Pending Approval', icon: 'ti-clock' },
-      { key: 'approved', label: 'Approved', icon: 'ti-circle-check' },
-      { key: 'disputed', label: 'Disputed', icon: 'ti-message-exclamation' },
-      { key: 'rejected', label: 'Rejected', icon: 'ti-refresh' },
-      { key: 'pending_action', label: 'Pending Action', icon: 'ti-alert-circle' },
-      { key: 'void', label: 'Void', icon: 'ti-ban' },
-      { key: 'abandon', label: 'Abandon', icon: 'ti-trash-x' },
+      { key: 'transicion', label: 'Cambio de estado', sublabel: 'Origen → Destino', icon: 'ti-arrows-exchange', transition: true },
     ],
   },
   {
@@ -84,7 +82,6 @@ export const SYSTEMS_CONFIG: SystemConfig[] = [
   },
 ]
 
-// Helper: get a flat label for an action key
 export function getActionLabel(systemKey: string, actionKey: string): string {
   const sys = SYSTEMS_CONFIG.find(s => s.key === systemKey)
   const act = sys?.actions.find(a => a.key === actionKey)

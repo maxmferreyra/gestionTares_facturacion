@@ -8,7 +8,6 @@ export default function Popups({ userName }: Props) {
   const [showWelcome, setShowWelcome] = useState(false)
   const [showLunch, setShowLunch] = useState(false)
 
-  // Welcome — only once per day (localStorage, not session)
   useEffect(() => {
     const key = `milo_welcome_${new Date().toISOString().split('T')[0]}`
     if (!localStorage.getItem(key)) {
@@ -17,7 +16,6 @@ export default function Popups({ userName }: Props) {
     }
   }, [])
 
-  // Lunch — once per day at 13:00
   useEffect(() => {
     function checkLunch() {
       const now = new Date()
@@ -40,7 +38,7 @@ export default function Popups({ userName }: Props) {
       {showWelcome && (
         <div style={overlay} onClick={() => setShowWelcome(false)}>
           <div style={modal} onClick={e => e.stopPropagation()}>
-            <img src="/logo-milo.png" alt="Milo" style={{ width: 70, height: 70, objectFit: 'contain', margin: '0 auto 8px' }} />
+            <div style={{ fontSize: 40, marginBottom: 12 }}>👋</div>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>¡Hola, {userName.split(' ')[0]}!</h2>
             <p style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 300, marginBottom: 20, lineHeight: 1.5 }}>
               No olvides iniciar <strong style={{ color: '#534AB7', fontWeight: 600 }}>Lilo</strong> antes de comenzar.
