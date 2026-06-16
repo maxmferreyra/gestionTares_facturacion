@@ -14,7 +14,7 @@ import AvatarPicker from '@/components/AvatarPicker'
 
 type View = 'daily' | 'weekly' | 'invoices' | 'help' | 'supervisor'
 
-const WORK_START = 9 * 60, WORK_END = 18 * 60, WORK_TOTAL = WORK_END - WORK_START
+const WORK_START = 8 * 60, WORK_END = 18 * 60, WORK_TOTAL = WORK_END - WORK_START
 const INACTIVITY_LIMIT = 8 * 60 * 60 * 1000
 
 const offsetDate = localOffsetDate
@@ -74,7 +74,7 @@ export default function Dashboard() {
   const fetchTasks = useCallback(async () => {
     if (!collaborator) return
     setLoading(true)
-    const res = await fetch(`/api/tasks?collaborator_id=${collaborator.id}&date=${currentDate}`)
+    const res = await fetch(`/api/tasks?collaborator_id=${collaborator.id}&date=${currentDate}`, { cache: 'no-store' })
     const data = await res.json()
     setTasks(Array.isArray(data) ? data : [])
     setLoading(false)
@@ -209,7 +209,7 @@ export default function Dashboard() {
               <div style={{ background: 'var(--card)', borderRadius: 10, padding: '11px 13px', border: '0.5px solid var(--border)' }}>
                 <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}><i className="ti ti-hourglass-filled" style={{ fontSize: 12 }} /> Horas registradas</div>
                 <div style={{ fontSize: 22, fontWeight: 600, color: '#534AB7' }}>{workedLabel || '0h'}</div>
-                <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 1 }}>de 9h laborales</div>
+                <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 1 }}>de 10h laborales</div>
               </div>
               <div style={{ background: 'var(--card)', borderRadius: 10, padding: '11px 13px', border: '0.5px solid var(--border)' }}>
                 <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}><i className="ti ti-clock-x" style={{ fontSize: 12 }} /> Sin registrar</div>
@@ -227,7 +227,7 @@ export default function Dashboard() {
                 <div style={{ height: 8, borderRadius: 99, background: 'var(--bg)', display: 'flex', overflow: 'hidden' }}>
                   {segments.map((seg, i) => <div key={i} style={{ width: `${(seg.to - seg.from) / WORK_TOTAL * 100}%`, background: seg.covered ? '#534AB7' : 'var(--bg)' }} />)}
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--text4)', marginTop: 4 }}><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span></div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--text4)', marginTop: 4 }}><span>08:00</span><span>11:00</span><span>14:00</span><span>18:00</span></div>
               </div>
             )}
 

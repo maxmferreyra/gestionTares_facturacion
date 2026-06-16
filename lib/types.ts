@@ -24,7 +24,7 @@ export interface Task {
 export interface SystemCatalog { id: string; name: string }
 export interface TagCatalog { id: string; name: string }
 
-export const HOURS = Array.from({ length: 10 }, (_, i) => (i + 9).toString().padStart(2, '0'))
+export const HOURS = Array.from({ length: 11 }, (_, i) => (i + 8).toString().padStart(2, '0'))
 export const MINUTES = ['00', '15', '30', '45']
 
 export function calcDuration(start: string, end: string) {

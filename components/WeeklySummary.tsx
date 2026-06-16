@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import type { Task } from '@/lib/types'
-import { calcDuration } from '@/lib/types'
+import { calcDuration, localToday, localOffsetDate } from '@/lib/types'
 
 interface Props { collaboratorId: string; collaboratorName: string }
 
@@ -9,13 +9,12 @@ function getMonday(d: Date) {
   const date = new Date(d)
   const day = date.getDay()
   date.setDate(date.getDate() - day + (day === 0 ? -6 : 1))
-  return date.toISOString().split('T')[0]
+  const y = date.getFullYear()
+  const m = (date.getMonth() + 1).toString().padStart(2, '0')
+  const dd = date.getDate().toString().padStart(2, '0')
+  return `${y}-${m}-${dd}`
 }
-function offsetDate(base: string, days: number) {
-  const d = new Date(base + 'T12:00:00')
-  d.setDate(d.getDate() + days)
-  return d.toISOString().split('T')[0]
-}
+const offsetDate = localOffsetDate
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
 function taskMinutes(t: Task) {
@@ -28,13 +27,13 @@ export default function WeeklySummary({ collaboratorId, collaboratorName }: Prop
   const [tasks, setTasks] = useState<Task[]>([])
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()))
   const [loading, setLoading] = useState(true)
-  const today = new Date().toISOString().split('T')[0]
+  const today = localToday()
   const font = { fontFamily: 'Montserrat, sans-serif' }
 
   useEffect(() => {
     async function load() {
       setLoading(true)
-      const res = await fetch(`/api/weekly-summary?collaborator_id=${collaboratorId}&week_start=${weekStart}`)
+      const res = await fetch(`/api/weekly-summary?collaborator_id=${collaboratorId}&week_start=${weekStart}`, { cache: 'no-store' })
       const data = await res.json()
       setTasks(Array.isArray(data) ? data : [])
       setLoading(false)
