@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-type Mode = 'login' | 'register' | 'reset'
+type Mode = 'login' | 'reset'
 
 export default function LoginPage() {
   const [name, setName] = useState('')
@@ -35,18 +35,7 @@ export default function LoginPage() {
       } catch { setError('Error de conexión. Intentá de nuevo.') } finally { setLoading(false) }
       return
     }
-    if (mode === 'register') {
-      if (pin.length < 4) { setError('El PIN debe tener al menos 4 dígitos'); return }
-      setLoading(true)
-      try {
-        const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim(), pin, mode: 'register' }) })
-        const data = await res.json()
-        if (!res.ok) { setError(data.error); return }
-        localStorage.setItem('collaborator', JSON.stringify(data.collaborator))
-        router.push('/dashboard')
-      } catch { setError('Error de conexión. Intentá de nuevo.') } finally { setLoading(false) }
-      return
-    }
+
     if (mode === 'reset') {
       if (newPin.length < 4) { setError('El nuevo PIN debe tener al menos 4 dígitos'); return }
       setLoading(true)
@@ -71,7 +60,6 @@ export default function LoginPage() {
     <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
       <div style={{ width: '100%', maxWidth: 320, ...font }}>
 
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
           <img src="/logo-milo.png" alt="Milo" style={{ width: 170, height: 170, objectFit: 'contain', margin: '0 auto' }} />
           <p style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 300, marginTop: -8 }}>
@@ -81,33 +69,18 @@ export default function LoginPage() {
 
         <div style={{ background: 'var(--card)', borderRadius: 14, border: '0.5px solid var(--border)', padding: '1.25rem' }}>
 
-          {mode !== 'reset' && (
-            <div style={{ display: 'flex', background: 'var(--bg)', borderRadius: 9, padding: 3, marginBottom: '1rem' }}>
-              {(['login', 'register'] as Mode[]).map(m => (
-                <button key={m} onClick={() => switchMode(m)}
-                  style={{ flex: 1, padding: '6px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, ...font,
-                    background: mode === m ? 'var(--card)' : 'transparent',
-                    color: mode === m ? 'var(--text)' : 'var(--text3)',
-                    boxShadow: mode === m ? '0 1px 3px rgba(0,0,0,0.08)' : 'none' }}>
-                  {m === 'login' ? 'Ingresar' : 'Registrarse'}
-                </button>
-              ))}
-            </div>
-          )}
-
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '0.9rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)', marginBottom: 5, fontWeight: 500 }}>
                 <i className="ti ti-user" style={{ fontSize: 13 }} /> Tu nombre
               </label>
-              <input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Martín García" style={inputStyle} />
+              <input value={name} onChange={e => setName(e.target.value)} placeholder="Ej: Julio Riobo" style={inputStyle} />
             </div>
 
-            {(mode === 'login' || mode === 'register') && (
+            {mode === 'login' && (
               <div style={{ marginBottom: '1rem' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--text2)', marginBottom: 5, fontWeight: 500 }}>
-                  <i className="ti ti-lock" style={{ fontSize: 13 }} />
-                  {mode === 'login' ? 'Tu PIN' : 'Elegí un PIN (4–8 dígitos)'}
+                  <i className="ti ti-lock" style={{ fontSize: 13 }} /> Tu PIN
                 </label>
                 <input value={pin} onChange={e => setPin(e.target.value.replace(/\D/g, '').slice(0, 8))}
                   type="password" inputMode="numeric" placeholder="••••"
@@ -141,7 +114,6 @@ export default function LoginPage() {
               style={{ width: '100%', padding: '10px', borderRadius: 9, border: 'none', background: mode === 'reset' ? '#BA7517' : '#534AB7', color: 'white', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, ...font, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
               {loading ? <><i className="ti ti-loader-2" style={{ fontSize: 15 }} /> Cargando...</>
                 : mode === 'login' ? <><i className="ti ti-login" style={{ fontSize: 15 }} /> Ingresar</>
-                : mode === 'register' ? <><i className="ti ti-user-plus" style={{ fontSize: 15 }} /> Crear cuenta</>
                 : <><i className="ti ti-key" style={{ fontSize: 15 }} /> Resetear PIN</>}
             </button>
           </form>
