@@ -11,7 +11,6 @@ import HelpSection from '@/components/HelpSection'
 import SupervisorDashboard from '@/components/SupervisorDashboard'
 import Popups from '@/components/Popups'
 import AvatarPicker from '@/components/AvatarPicker'
-import { useDarkMode } from '@/lib/darkmode'
 
 type View = 'daily' | 'weekly' | 'invoices' | 'help' | 'supervisor'
 
@@ -41,7 +40,6 @@ function timeToMin(t: string) { const [h, m] = t.split(':').map(Number); return 
 
 export default function Dashboard() {
   const router = useRouter()
-  const { dark, toggle: toggleDark } = useDarkMode()
   const [collaborator, setCollaborator] = useState<{ id: string; name: string; role: string; avatar?: string | null } | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
   const [view, setView] = useState<View>('daily')
@@ -176,9 +174,6 @@ export default function Dashboard() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 7 }}>
-            <button onClick={toggleDark} style={{ width: 34, height: 34, borderRadius: 8, border: '0.5px solid var(--border)', background: 'var(--card)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)' }}>
-              <i className={`ti ${dark ? 'ti-sun' : 'ti-moon'}`} style={{ fontSize: 16 }} />
-            </button>
             <button onClick={handleExport} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid #C0DD97', background: '#EAF3DE', fontSize: 11, cursor: 'pointer', color: '#3B6D11', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
               <i className="ti ti-file-spreadsheet" style={{ fontSize: 14 }} /> Excel
             </button>
@@ -283,7 +278,7 @@ export default function Dashboard() {
       </div>
 
       {/* Milo fijo esquina inferior derecha */}
-      <div style={{ position: 'fixed', bottom: 16, right: 16, width: 96, height: 96, borderRadius: '50%', background: dark ? 'rgba(255,255,255,0.08)' : 'rgba(83,74,183,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 50 }}>
+      <div style={{ position: 'fixed', bottom: 16, right: 16, width: 96, height: 96, borderRadius: '50%', background: 'rgba(83,74,183,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 50 }}>
         <img src="/milo-fijo.png" alt="Milo" style={{ width: 80, height: 'auto', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.2))' }} />
       </div>
     </div>
