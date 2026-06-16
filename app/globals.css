@@ -9,21 +9,25 @@
 :root {
   --bg: #f5f4f0;
   --card: #ffffff;
+  --input-bg: #fafaf8;
   --border: #e5e3db;
   --text: #1a1a18;
   --text2: #5f5e5a;
   --text3: #888780;
   --text4: #b4b2a9;
+  --hover: #f5f4f0;
 }
 
 [data-theme="dark"] {
   --bg: #1a1a1e;
   --card: #26262c;
+  --input-bg: #2f2f37;
   --border: #3a3a42;
   --text: #f0efe8;
   --text2: #c8c6bf;
   --text3: #9a9891;
   --text4: #6a6861;
+  --hover: #2f2f37;
 }
 
 body {
@@ -37,10 +41,16 @@ body {
   transition: background .2s, color .2s;
 }
 
-.card {
-  background: var(--card);
-  border: 0.5px solid var(--border);
-  border-radius: 12px;
+input, select, textarea {
+  color: var(--text);
 }
 
+input::placeholder, textarea::placeholder {
+  color: var(--text4);
+}
 
+/* Dark mode select options */
+[data-theme="dark"] select option {
+  background: #26262c;
+  color: #f0efe8;
+}

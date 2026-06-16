@@ -2,7 +2,7 @@
 -- This creates the two supervisor accounts with a default PIN of 1234
 -- IMPORTANT: Change the PINs after first login using "Olvidé mi PIN"
 
--- Add role column to collaborators.
+-- Add role column to collaborators
 alter table collaborators add column if not exists role text default 'collaborator';
 
 -- Insert supervisors (PIN: 1234 - hashed with bcrypt rounds=10)
