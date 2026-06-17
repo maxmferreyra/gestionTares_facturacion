@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase, fetchAllRows } from '@/lib/supabase'
 import * as XLSX from 'xlsx'
 import { SYSTEMS_CONFIG } from '@/lib/actions-config'
 
@@ -23,19 +23,23 @@ export async function GET(req: NextRequest) {
   const nameMap: Record<string, string> = {}
   for (const c of collabs || []) nameMap[c.id] = c.name
 
-  // Tasks
-  let tq = supabase.from('tasks').select('*').order('date').order('start_time')
-  if (!isAll) tq = tq.eq('collaborator_id', collaborator_id)
-  if (effFrom) tq = tq.gte('date', effFrom)
-  if (effTo) tq = tq.lte('date', effTo)
-  const { data: tasks } = await tq
+  // Tasks (paginado — sin límite de 1000 filas)
+  const { data: tasks } = await fetchAllRows((rFrom, rTo) => {
+    let q = supabase.from('tasks').select('*').order('date').order('start_time').range(rFrom, rTo)
+    if (!isAll) q = q.eq('collaborator_id', collaborator_id)
+    if (effFrom) q = q.gte('date', effFrom)
+    if (effTo) q = q.lte('date', effTo)
+    return q
+  })
 
-  // Actions
-  let aq = supabase.from('invoice_actions').select('*').order('date').order('created_at')
-  if (!isAll) aq = aq.eq('collaborator_id', collaborator_id)
-  if (effFrom) aq = aq.gte('date', effFrom)
-  if (effTo) aq = aq.lte('date', effTo)
-  const { data: actions } = await aq
+  // Actions (paginado — sin límite de 1000 filas)
+  const { data: actions } = await fetchAllRows((rFrom, rTo) => {
+    let q = supabase.from('invoice_actions').select('*').order('date').order('created_at').range(rFrom, rTo)
+    if (!isAll) q = q.eq('collaborator_id', collaborator_id)
+    if (effFrom) q = q.gte('date', effFrom)
+    if (effTo) q = q.lte('date', effTo)
+    return q
+  })
 
   const wb = XLSX.utils.book_new()
 

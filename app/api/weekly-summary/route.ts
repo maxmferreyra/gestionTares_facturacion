@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase, fetchAllRows } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -18,25 +18,21 @@ export async function GET(req: NextRequest) {
   end.setDate(end.getDate() + 6)
   const weekEnd = end.toISOString().split('T')[0]
 
-  const { data: tasks, error: tasksError } = await supabase
-    .from('tasks')
-    .select('*')
-    .eq('collaborator_id', collaborator_id)
-    .gte('date', week_start)
-    .lte('date', weekEnd)
-    .order('date')
+  const { data: tasks, error: tasksError } = await fetchAllRows((rFrom, rTo) =>
+    supabase.from('tasks').select('*')
+      .eq('collaborator_id', collaborator_id)
+      .gte('date', week_start).lte('date', weekEnd)
+      .order('date').range(rFrom, rTo)
+  )
+  if (tasksError) return NextResponse.json({ error: tasksError }, { status: 500 })
 
-  if (tasksError) return NextResponse.json({ error: tasksError.message }, { status: 500 })
+  const { data: actions, error: actionsError } = await fetchAllRows((rFrom, rTo) =>
+    supabase.from('invoice_actions').select('*')
+      .eq('collaborator_id', collaborator_id)
+      .gte('date', week_start).lte('date', weekEnd)
+      .order('date').range(rFrom, rTo)
+  )
+  if (actionsError) return NextResponse.json({ error: actionsError }, { status: 500 })
 
-  const { data: actions, error: actionsError } = await supabase
-    .from('invoice_actions')
-    .select('*')
-    .eq('collaborator_id', collaborator_id)
-    .gte('date', week_start)
-    .lte('date', weekEnd)
-    .order('date')
-
-  if (actionsError) return NextResponse.json({ error: actionsError.message }, { status: 500 })
-
-  return NextResponse.json({ tasks: tasks || [], actions: actions || [] })
+  return NextResponse.json({ tasks, actions })
 }

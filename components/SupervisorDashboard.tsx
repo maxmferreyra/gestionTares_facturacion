@@ -83,7 +83,7 @@ export default function SupervisorDashboard() {
   const actionsByCollabRanking: Record<string, number> = {}
   for (const a of rankingActions) actionsByCollabRanking[a.collaborator_id] = (actionsByCollabRanking[a.collaborator_id] || 0) + 1
   const allUserIds = Array.from(new Set([
-    ...collaborators.filter(c => c.role === 'collaborator').map(c => c.id),
+    ...collaborators.map(c => c.id),
     ...Object.keys(actionsByCollabRanking),
   ]))
   const ranking = allUserIds
@@ -117,7 +117,7 @@ export default function SupervisorDashboard() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <select value={collabFilter} onChange={e => setCollabFilter(e.target.value)} style={selectStyle}>
           <option value="all">Todo el equipo</option>
-          {collaborators.filter(c => c.role === 'collaborator').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          {collaborators.map(c => <option key={c.id} value={c.id}>{c.name}{c.role === 'supervisor' ? ' ⭐' : ''}</option>)}
         </select>
         <select value={systemFilter} onChange={e => setSystemFilter(e.target.value)} style={selectStyle}>
           <option value="all">Todos los sistemas</option>
@@ -180,6 +180,7 @@ export default function SupervisorDashboard() {
         {ranking.map((r, i) => {
           const avatar = getAvatar(r.id)
           const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
+          const isSup = collaborators.find(c => c.id === r.id)?.role === 'supervisor'
           return (
             <div key={r.id} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: i < ranking.length - 1 ? '0.5px solid var(--border)' : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -187,7 +188,7 @@ export default function SupervisorDashboard() {
                 {avatar
                   ? <img src={avatar} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'contain', background: '#fff', flexShrink: 0 }} />
                   : <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#CECBF6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#3C3489', flexShrink: 0 }}>{getInitials(r.id)}</div>}
-                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', flex: 1 }}>{getName(r.id)}</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', flex: 1 }}>{getName(r.id)}{isSup && ' ⭐'}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#534AB7' }}>{r.count} toques</span>
               </div>
               <div style={{ height: 7, background: 'var(--bg)', borderRadius: 99, overflow: 'hidden', marginLeft: 26 }}>

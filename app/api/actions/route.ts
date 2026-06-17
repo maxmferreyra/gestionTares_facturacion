@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase, fetchAllRows } from '@/lib/supabase'
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const collaborator_id = searchParams.get('collaborator_id')
   const date = searchParams.get('date')
   if (!collaborator_id) return NextResponse.json({ error: 'Falta collaborator_id' }, { status: 400 })
-  let query = supabase.from('invoice_actions').select('*').eq('collaborator_id', collaborator_id).order('created_at', { ascending: true })
-  if (date) query = query.eq('date', date)
-  const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const { data, error } = await fetchAllRows((rFrom, rTo) => {
+    let q = supabase.from('invoice_actions').select('*').eq('collaborator_id', collaborator_id).order('created_at', { ascending: true }).range(rFrom, rTo)
+    if (date) q = q.eq('date', date)
+    return q
+  })
+  if (error) return NextResponse.json({ error }, { status: 500 })
   return NextResponse.json(data)
 }
 

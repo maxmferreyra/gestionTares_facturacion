@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { supabase, fetchAllRows } from '@/lib/supabase'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -12,15 +12,19 @@ export async function GET(req: NextRequest) {
   const { data: collaborators } = await supabase
     .from('collaborators').select('id, name, role, avatar')
 
-  let tq = supabase.from('tasks').select('*').order('date').order('start_time')
-  if (from) tq = tq.gte('date', from)
-  if (to) tq = tq.lte('date', to)
-  const { data: tasks } = await tq
+  const { data: tasks } = await fetchAllRows((rFrom, rTo) => {
+    let q = supabase.from('tasks').select('*').order('date').order('start_time').range(rFrom, rTo)
+    if (from) q = q.gte('date', from)
+    if (to) q = q.lte('date', to)
+    return q
+  })
 
-  let aq = supabase.from('invoice_actions').select('*').order('date').order('created_at')
-  if (from) aq = aq.gte('date', from)
-  if (to) aq = aq.lte('date', to)
-  const { data: actions } = await aq
+  const { data: actions } = await fetchAllRows((rFrom, rTo) => {
+    let q = supabase.from('invoice_actions').select('*').order('date').order('created_at').range(rFrom, rTo)
+    if (from) q = q.gte('date', from)
+    if (to) q = q.lte('date', to)
+    return q
+  })
 
   return NextResponse.json({
     collaborators: collaborators || [],
