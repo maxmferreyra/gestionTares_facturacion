@@ -6,16 +6,33 @@ import { TASK_OPTIONS, TASK_SYSTEMS, TASK_TAGS, tagStyleFixed } from '@/lib/task
 interface Props {
   onAdd: (data: { title: string; start_time: string; end_time: string; systems: string[]; tag: string; notes: string }) => void
   onCancel: () => void
+  defaultStartTime?: string | null // "HH:MM" o "HH:MM:SS" — fin de la última tarea cargada
 }
 
-export default function AddTaskForm({ onAdd, onCancel }: Props) {
+const HOUR_VALUES = HOURS // ['07'..'20']
+const MIN_VALUES = MINUTES // ['00','15','30','45']
+
+function clampHour(h: number) {
+  if (h < 7) return 7
+  if (h > 20) return 20
+  return h
+}
+
+export default function AddTaskForm({ onAdd, onCancel, defaultStartTime }: Props) {
+  // Si hay una tarea anterior ese día, sugerimos como inicio su horario de fin
+  const suggestedStartH = defaultStartTime ? defaultStartTime.slice(0, 2) : '09'
+  const suggestedStartM = defaultStartTime ? defaultStartTime.slice(3, 5) : '00'
+  const suggestedEndH = defaultStartTime
+    ? clampHour(parseInt(suggestedStartH, 10) + 1).toString().padStart(2, '0')
+    : '10'
+
   const [title, setTitle] = useState('')
   const [titleSearch, setTitleSearch] = useState('')
   const [showTaskList, setShowTaskList] = useState(false)
-  const [startH, setStartH] = useState('09')
-  const [startM, setStartM] = useState('00')
-  const [endH, setEndH] = useState('10')
-  const [endM, setEndM] = useState('00')
+  const [startH, setStartH] = useState(HOUR_VALUES.includes(suggestedStartH) ? suggestedStartH : '09')
+  const [startM, setStartM] = useState(MIN_VALUES.includes(suggestedStartM) ? suggestedStartM : '00')
+  const [endH, setEndH] = useState(suggestedEndH)
+  const [endM, setEndM] = useState(MIN_VALUES.includes(suggestedStartM) ? suggestedStartM : '00')
   const [selectedSystems, setSelectedSystems] = useState<string[]>([])
   const [selectedTag, setSelectedTag] = useState(TASK_TAGS[0])
   const [notes, setNotes] = useState('')
@@ -90,6 +107,11 @@ export default function AddTaskForm({ onAdd, onCancel }: Props) {
         </div>
 
         {/* Time selectors */}
+        {defaultStartTime && (
+          <div style={{ fontSize: 11, color: '#0F6E56', background: '#E0F2EF', padding: '5px 10px', borderRadius: 7, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <i className="ti ti-clock-play" style={{ fontSize: 13 }} /> Inicio sugerido: continúa desde tu última tarea ({suggestedStartH}:{suggestedStartM})
+          </div>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
           <div>
             <label style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 5 }}>

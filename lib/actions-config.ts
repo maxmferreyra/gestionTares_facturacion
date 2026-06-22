@@ -91,6 +91,7 @@ export const SYSTEMS_CONFIG: SystemConfig[] = [
       { key: 'brasil_mod_reference_boleto', label: 'Brasil - Modificación de reference por BOLETO', icon: 'ti-edit' },
       { key: 'brasil_reclamo_boleto_vencimiento', label: 'Brasil - Reclamo nuevo boleto por vencimiento', icon: 'ti-receipt' },
       { key: 'reportes_generados', label: 'Reportes generados', icon: 'ti-report' },
+      { key: 'revision_documento_trm', label: 'Revisión documento (TRM, información contable, WTH, etc)', icon: 'ti-file-search' },
     ]),
   },
   {
@@ -121,6 +122,7 @@ export const SYSTEMS_CONFIG: SystemConfig[] = [
       { key: 'lectura_mail', label: 'Lectura de mail', icon: 'ti-mail-opened' },
       { key: 'respuesta_mail', label: 'Respuesta mail', icon: 'ti-mail-forward' },
       { key: 'reunion_meeting', label: 'Reunión/Meeting', icon: 'ti-users' },
+      { key: 'brasil_reclamo_boleto_vencido', label: 'Brasil - Reclamo boleto vencido o no válido', icon: 'ti-receipt-refund' },
     ]),
   },
 ]

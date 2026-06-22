@@ -65,6 +65,9 @@ export const TASK_OPTIONS = [
   'Seguimiento de KPIs (volumen, SLA, errores)',
   'Soporte a auditoría interna/externa',
   'Soporte CB por Teams/otras vías',
+  'Revisión documentos en SAP',
+  'Feriado/OOO',
+  'Turnos médico/Personal',
 ].sort((a, b) => a.localeCompare(b))
 
 // Sistemas fijos para el campo "Sistema" del formulario de tareas (ordenados alfabéticamente)

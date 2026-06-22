@@ -124,6 +124,12 @@ export default function Dashboard() {
   const uncoveredH = Math.floor(uncoveredMin / 60), uncoveredM = uncoveredMin % 60
   const uncoveredLabel = uncoveredM > 0 ? `${uncoveredH}h ${uncoveredM}min` : `${uncoveredH}h`
   const motivation = getMotivation(workedMin)
+
+  // Horario de fin de la última tarea del día — se usa como inicio sugerido de la próxima
+  const lastTaskEndTime = tasks.reduce((latest: string | null, t) => {
+    if (!t.end_time) return latest
+    return (!latest || t.end_time > latest) ? t.end_time : latest
+  }, null)
   const initials = collaborator?.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'
   const font = { fontFamily: 'Montserrat, sans-serif' }
   const isSupervisor = collaborator?.role === 'supervisor'
@@ -257,7 +263,7 @@ export default function Dashboard() {
             )}
 
             {showAddForm
-              ? <AddTaskForm onAdd={addTask} onCancel={() => setShowAddForm(false)} />
+              ? <AddTaskForm onAdd={addTask} onCancel={() => setShowAddForm(false)} defaultStartTime={lastTaskEndTime} />
               : <button onClick={() => setShowAddForm(true)} style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px dashed var(--text4)', background: 'transparent', fontSize: 13, color: 'var(--text3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, ...font, fontWeight: 500 }}>
                   <i className="ti ti-plus" style={{ fontSize: 15 }} /> Registrar tarea
                 </button>}
@@ -282,10 +288,8 @@ export default function Dashboard() {
         {view === 'users' && isSupervisor && <UserManagement currentUserId={collaborator.id} />}
       </div>
 
-      {/* Milo fijo esquina inferior derecha */}
-      <div style={{ position: 'fixed', bottom: 16, right: 16, width: 96, height: 96, borderRadius: '50%', background: 'rgba(83,74,183,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', zIndex: 50 }}>
-        <img src="/milo-fijo.png" alt="Milo" style={{ width: 80, height: 'auto', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.2))' }} />
-      </div>
+      {/* Milo fijo esquina inferior derecha — solo el dibujo, sin fondo */}
+      <img src="/milo-fijo.png" alt="Milo" style={{ position: 'fixed', bottom: 16, right: 16, width: 120, height: 'auto', pointerEvents: 'none', zIndex: 50, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.2))' }} />
     </div>
   )
 }
