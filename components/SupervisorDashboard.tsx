@@ -1,12 +1,18 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { SYSTEMS_CONFIG } from '@/lib/actions-config'
+import { tagStyleFixed } from '@/lib/tasks-config'
+import { calcDuration, formatDuration } from '@/lib/types'
 
 const font = { fontFamily: 'Montserrat, sans-serif' }
 
 interface Collaborator { id: string; name: string; role: string; avatar?: string }
 interface Action { id: string; collaborator_id: string; system: string; action: string; date: string; created_at: string }
-interface Task { id: string; collaborator_id: string; title: string; date: string; hours: number }
+interface Task {
+  id: string; collaborator_id: string; title: string; date: string
+  start_time: string | null; end_time: string | null
+  systems: string[] | null; tag: string | null; notes: string | null
+}
 
 type Period = 'day' | 'week' | 'month'
 
@@ -62,6 +68,12 @@ export default function SupervisorDashboard() {
   const rankingActions = actions.filter(a => systemFilter === 'all' || a.system === systemFilter)
 
   const filteredTasks = tasks.filter(t => collabFilter === 'all' || t.collaborator_id === collabFilter)
+
+  // Tareas ordenadas para mostrar en detalle (más reciente primero)
+  const taskListSorted = [...filteredTasks].sort((a, b) => {
+    if (a.date !== b.date) return b.date.localeCompare(a.date)
+    return (b.start_time || '').localeCompare(a.start_time || '')
+  })
 
   const totalActions = baseActions.length
   const totalTasks = filteredTasks.length
@@ -149,6 +161,47 @@ export default function SupervisorDashboard() {
             <div style={{ fontSize: 12, fontWeight: 400, color: 'var(--text4)', marginTop: 5 }}>{systemFilter !== 'all' ? '—' : 'Sin datos'}</div>
           )}
         </div>
+      </div>
+
+      {/* Tareas registradas */}
+      <div style={{ background: 'var(--card)', borderRadius: 12, border: '0.5px solid var(--border)', padding: '14px', marginBottom: 12 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 5 }}>
+          <i className="ti ti-clipboard-list" style={{ fontSize: 13 }} /> Tareas registradas {collabFilter !== 'all' && `· ${getName(collabFilter)}`}
+        </div>
+        {taskListSorted.length > 0 ? (
+          <div style={{ maxHeight: 360, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {taskListSorted.map(t => {
+              const tc = tagStyleFixed(t.tag || '')
+              const dur = t.start_time && t.end_time ? formatDuration(t.start_time, t.end_time) : null
+              const dateLabel = new Date(t.date + 'T12:00').toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })
+              return (
+                <div key={t.id} style={{ border: '0.5px solid var(--border)', borderRadius: 8, padding: '8px 11px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 10, color: 'var(--text4)', fontWeight: 500, minWidth: 36 }}>{dateLabel}</span>
+                    {collabFilter === 'all' && (
+                      <span style={{ fontSize: 10, fontWeight: 600, color: '#3C3489', background: '#CECBF6', padding: '1px 7px', borderRadius: 20 }}>{getName(t.collaborator_id)}</span>
+                    )}
+                    {t.start_time && t.end_time && (
+                      <span style={{ fontSize: 11, color: '#534AB7', fontWeight: 600 }}>{t.start_time.slice(0, 5)}–{t.end_time.slice(0, 5)}</span>
+                    )}
+                    {dur && <span style={{ fontSize: 10, background: '#EAF3DE', color: '#3B6D11', padding: '1px 7px', borderRadius: 20, fontWeight: 600 }}>{dur}</span>}
+                    {t.tag && <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 6, background: tc.bg, color: tc.color, fontWeight: 500 }}>{t.tag}</span>}
+                  </div>
+                  <div style={{ fontSize: 13, color: 'var(--text)' }}>{t.title}</div>
+                  {t.systems && t.systems.length > 0 && (
+                    <div style={{ display: 'flex', gap: 4, marginTop: 4, flexWrap: 'wrap' }}>
+                      {t.systems.map(s => (
+                        <span key={s} style={{ fontSize: 9, padding: '1px 6px', borderRadius: 5, background: '#E6F1FB', color: '#185FA5', fontWeight: 500 }}>{s}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div style={{ fontSize: 13, color: 'var(--text4)', fontWeight: 300, textAlign: 'center', padding: '1rem 0' }}>Sin tareas registradas en este período</div>
+        )}
       </div>
 
       {/* Desglose por sistema con porcentajes */}
