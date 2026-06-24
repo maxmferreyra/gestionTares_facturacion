@@ -44,6 +44,43 @@ function formatAmount(n: number) {
   return n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+// Interpreta el monto sin importar si lo escribiste en formato
+// argentino (5.000.000,00) o en formato US/Coupa-SAP (5,000,000.00).
+// Detecta cuál símbolo es el separador decimal mirando cuál aparece último.
+function parseAmountInput(raw: string): number | null {
+  let s = raw.trim()
+  if (!s) return null
+  const hasComma = s.includes(',')
+  const hasDot = s.includes('.')
+
+  if (hasComma && hasDot) {
+    const lastComma = s.lastIndexOf(',')
+    const lastDot = s.lastIndexOf('.')
+    if (lastComma > lastDot) {
+      // la coma es el decimal (formato AR) -> el punto era separador de miles
+      s = s.replace(/\./g, '').replace(',', '.')
+    } else {
+      // el punto es el decimal (formato US) -> la coma era separador de miles
+      s = s.replace(/,/g, '')
+    }
+  } else if (hasComma) {
+    const parts = s.split(',')
+    const lastPart = parts[parts.length - 1]
+    s = (parts.length === 2 && lastPart.length <= 2)
+      ? s.replace(',', '.')   // coma decimal: "50000,50"
+      : s.replace(/,/g, '')   // comas de miles: "5,000,000"
+  } else if (hasDot) {
+    const parts = s.split('.')
+    const lastPart = parts[parts.length - 1]
+    if (!(parts.length === 2 && lastPart.length <= 2)) {
+      s = s.replace(/\./g, '') // puntos de miles: "5.000.000"
+    }
+  }
+
+  const n = parseFloat(s)
+  return isNaN(n) ? null : n
+}
+
 export default function BaseImponiblePage() {
   const router = useRouter()
   const [collaborator, setCollaborator] = useState<{ id: string; name: string; role: string } | null>(null)
@@ -98,8 +135,8 @@ export default function BaseImponiblePage() {
     setFormError('')
     if (!vendor.trim()) { setFormError('Ingresá el vendor'); return }
     if (!invoiceNumber.trim()) { setFormError('Ingresá el N° de invoice'); return }
-    const amountNum = parseFloat(amount.replace(',', '.'))
-    if (!amount || isNaN(amountNum)) { setFormError('Ingresá un monto válido'); return }
+    const amountNum = parseAmountInput(amount)
+    if (amountNum === null) { setFormError('Ingresá un monto válido'); return }
     if (!collaborator) return
 
     setSaving(true)
@@ -240,6 +277,7 @@ export default function BaseImponiblePage() {
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'block', marginBottom: 4 }}>Price / base imponible</label>
             <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" style={{ ...inputStyle, ...mono }} />
+            <div style={{ fontSize: 10, color: '#b4b2a9', marginTop: 4 }}>Acepta cualquier formato: 5.000.000,00 o 5,000,000.00</div>
           </div>
           {formError && (
             <div style={{ fontSize: 12, color: '#A32D2D', background: '#FCEBEB', padding: '6px 10px', borderRadius: 7, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
