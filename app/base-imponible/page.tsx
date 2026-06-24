@@ -158,11 +158,11 @@ export default function BaseImponiblePage() {
     grouped.get(it.vendor)!.push(it)
   }
   // Dentro de cada grupo, más antigua primero (lo más urgente arriba) para pendientes; más reciente primero para corregidas
-  for (const [, arr] of grouped) {
+  grouped.forEach(arr => {
     arr.sort((a, b) => statusView === 'pending'
       ? a.added_at.localeCompare(b.added_at)
       : (b.corrected_at || '').localeCompare(a.corrected_at || ''))
-  }
+  })
   const vendorGroups = Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0]))
 
   const inputStyle = { width: '100%', padding: '8px 11px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 13, outline: 'none', background: '#fafaf8', color: '#1a1a18', ...font }
