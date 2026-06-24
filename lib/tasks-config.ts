@@ -17,7 +17,6 @@ export const TASK_OPTIONS = [
   'Brasil - Actualización Tax Review',
   'Brasil - Modificación reference boletos',
   'Brasil - Reclamo TAX por devoluciones de tax reviews',
-  'Cambio de bases imponibles Argentina',
   'Capacitación interna del equipo',
   'Carga manual de facturas (error OCR/CSP)',
   'Colombia - Revisión de facturas pendientes',

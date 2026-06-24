@@ -1,0 +1,337 @@
+'use client'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { localToday, localOffsetDate } from '@/lib/types'
+
+const font = { fontFamily: 'Montserrat, sans-serif' }
+const mono = { fontFamily: "'JetBrains Mono', monospace" }
+const INACTIVITY_LIMIT = 8 * 60 * 60 * 1000
+
+interface Correction {
+  id: string
+  company_code: '4001' | '4015'
+  vendor: string
+  invoice_number: string
+  amount: number
+  status: 'pending' | 'done'
+  added_by_id: string
+  added_by_name: string
+  added_at: string
+  corrected_by_id: string | null
+  corrected_by_name: string | null
+  corrected_at: string | null
+}
+
+type Scope = 'mine' | 'all'
+type StatusView = 'pending' | 'done'
+
+function localDateOf(iso: string) {
+  const d = new Date(iso)
+  const y = d.getFullYear(), m = (d.getMonth() + 1).toString().padStart(2, '0'), day = d.getDate().toString().padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function daysAgoInfo(addedAtIso: string) {
+  const addedDate = localDateOf(addedAtIso)
+  const today = localToday()
+  if (addedDate === today) return { label: 'Hoy', warn: false }
+  if (addedDate === localOffsetDate(today, -1)) return { label: 'Ayer', warn: false }
+  const diffDays = Math.round((new Date(today + 'T12:00').getTime() - new Date(addedDate + 'T12:00').getTime()) / 86400000)
+  return { label: `Hace ${diffDays} días`, warn: diffDays >= 2 }
+}
+
+function formatAmount(n: number) {
+  return n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+export default function BaseImponiblePage() {
+  const router = useRouter()
+  const [collaborator, setCollaborator] = useState<{ id: string; name: string; role: string } | null>(null)
+  const [items, setItems] = useState<Correction[]>([])
+  const [loading, setLoading] = useState(true)
+  const [scope, setScope] = useState<Scope>('mine')
+  const [statusView, setStatusView] = useState<StatusView>('pending')
+  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Add form
+  const [companyCode, setCompanyCode] = useState<'4001' | '4015'>('4001')
+  const [vendor, setVendor] = useState('')
+  const [invoiceNumber, setInvoiceNumber] = useState('')
+  const [amount, setAmount] = useState('')
+  const [formError, setFormError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [busyId, setBusyId] = useState<string | null>(null)
+
+  function resetInactivity() {
+    if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
+    inactivityTimer.current = setTimeout(() => {
+      localStorage.removeItem('collaborator')
+      router.push('/?reason=inactivity')
+    }, INACTIVITY_LIMIT)
+  }
+
+  useEffect(() => {
+    const stored = localStorage.getItem('collaborator')
+    if (!stored) { router.push('/'); return }
+    setCollaborator(JSON.parse(stored))
+    resetInactivity()
+    const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart']
+    events.forEach(e => window.addEventListener(e, resetInactivity))
+    return () => {
+      events.forEach(e => window.removeEventListener(e, resetInactivity))
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
+    }
+  }, [router])
+
+  const fetchItems = useCallback(async () => {
+    setLoading(true)
+    const res = await fetch('/api/base-imponible', { cache: 'no-store' })
+    const data = await res.json()
+    setItems(Array.isArray(data) ? data : [])
+    setLoading(false)
+  }, [])
+
+  useEffect(() => { fetchItems() }, [fetchItems])
+
+  async function addItem(e: React.FormEvent) {
+    e.preventDefault()
+    setFormError('')
+    if (!vendor.trim()) { setFormError('Ingresá el vendor'); return }
+    if (!invoiceNumber.trim()) { setFormError('Ingresá el N° de invoice'); return }
+    const amountNum = parseFloat(amount.replace(',', '.'))
+    if (!amount || isNaN(amountNum)) { setFormError('Ingresá un monto válido'); return }
+    if (!collaborator) return
+
+    setSaving(true)
+    const res = await fetch('/api/base-imponible', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        company_code: companyCode, vendor: vendor.trim(), invoice_number: invoiceNumber.trim(),
+        amount: amountNum, added_by_id: collaborator.id, added_by_name: collaborator.name,
+      }),
+    })
+    const data = await res.json()
+    setSaving(false)
+    if (!res.ok) { setFormError(data.error || 'Error al guardar'); return }
+    setItems(prev => [data, ...prev])
+    setVendor(''); setInvoiceNumber(''); setAmount('')
+  }
+
+  async function markCorrected(id: string) {
+    if (!collaborator) return
+    setBusyId(id)
+    const res = await fetch(`/api/base-imponible/${id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ corrected_by_id: collaborator.id, corrected_by_name: collaborator.name, date: localToday() }),
+    })
+    const data = await res.json()
+    setBusyId(null)
+    if (res.ok) setItems(prev => prev.map(it => it.id === id ? data : it))
+  }
+
+  async function removePending(id: string) {
+    setBusyId(id)
+    const res = await fetch(`/api/base-imponible/${id}`, { method: 'DELETE' })
+    setBusyId(null)
+    if (res.ok) setItems(prev => prev.filter(it => it.id !== id))
+  }
+
+  if (!collaborator) return null
+
+  const today = localToday()
+
+  // ── Filtros ──
+  const scopedItems = items.filter(it => scope === 'mine' ? it.added_by_id === collaborator.id : true)
+  const pendingAll = scopedItems.filter(it => it.status === 'pending')
+  const correctedToday = scopedItems.filter(it => it.status === 'done' && it.corrected_at && localDateOf(it.corrected_at) === today)
+
+  const visibleItems = statusView === 'pending' ? pendingAll : correctedToday
+
+  // Progreso: de todo lo que había que resolver hoy (pendiente actual + ya corregido hoy), cuánto se resolvió
+  const totalToday = pendingAll.length + correctedToday.length
+  const progressPct = totalToday > 0 ? Math.round((correctedToday.length / totalToday) * 100) : 0
+
+  // Agrupar por vendor
+  const grouped = new Map<string, Correction[]>()
+  for (const it of visibleItems) {
+    if (!grouped.has(it.vendor)) grouped.set(it.vendor, [])
+    grouped.get(it.vendor)!.push(it)
+  }
+  // Dentro de cada grupo, más antigua primero (lo más urgente arriba) para pendientes; más reciente primero para corregidas
+  for (const [, arr] of grouped) {
+    arr.sort((a, b) => statusView === 'pending'
+      ? a.added_at.localeCompare(b.added_at)
+      : (b.corrected_at || '').localeCompare(a.corrected_at || ''))
+  }
+  const vendorGroups = Array.from(grouped.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+
+  const inputStyle = { width: '100%', padding: '8px 11px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 13, outline: 'none', background: '#fafaf8', color: '#1a1a18', ...font }
+
+  return (
+    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', justifyContent: 'center', padding: '1.5rem 1rem', background: '#f5f4f0', ...font }}>
+      <div style={{ width: '80%', maxWidth: 680 }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.1rem' }}>
+          <div>
+            <h1 style={{ fontSize: 17, fontWeight: 600, color: '#1a1a18' }}>Base imponible</h1>
+            <div style={{ fontSize: 11, color: '#888780', fontWeight: 300, marginTop: 2 }}>Corrección manual SAP — company codes 4001 / 4015</div>
+          </div>
+          <button onClick={() => router.push('/dashboard')}
+            style={{ border: 'none', background: 'transparent', fontSize: 11, color: '#888780', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: '4px 0', ...font }}>
+            <i className="ti ti-arrow-left" style={{ fontSize: 13 }} /> Volver a Milo
+          </button>
+        </div>
+
+        {/* Toggle Mías / Todo el equipo */}
+        <div style={{ display: 'flex', background: '#fff', borderRadius: 10, padding: 3, marginBottom: 8, border: '0.5px solid #e5e3db', gap: 2 }}>
+          {(['mine', 'all'] as Scope[]).map(s => (
+            <button key={s} onClick={() => setScope(s)}
+              style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 500, background: scope === s ? '#534AB7' : 'transparent', color: scope === s ? '#fff' : '#888780', ...font }}>
+              {s === 'mine' ? 'Mías' : 'Todo el equipo'}
+            </button>
+          ))}
+        </div>
+
+        {/* Toggle Pendientes / Corregidas */}
+        <div style={{ display: 'flex', background: '#fff', borderRadius: 10, padding: 3, marginBottom: 14, border: '0.5px solid #e5e3db', gap: 2 }}>
+          {(['pending', 'done'] as StatusView[]).map(s => (
+            <button key={s} onClick={() => setStatusView(s)}
+              style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 500, background: statusView === s ? '#534AB7' : 'transparent', color: statusView === s ? '#fff' : '#888780', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, ...font }}>
+              <i className={`ti ${s === 'pending' ? 'ti-clock' : 'ti-circle-check'}`} style={{ fontSize: 13 }} />
+              {s === 'pending' ? `Pendientes (${pendingAll.length})` : `Corregidas hoy (${correctedToday.length})`}
+            </button>
+          ))}
+        </div>
+
+        {/* Progress card */}
+        <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #e5e3db', padding: '13px 16px', marginBottom: 14 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11, color: '#888780', fontWeight: 500, marginBottom: 8 }}>
+            <span><i className="ti ti-chart-donut" style={{ fontSize: 13, verticalAlign: -2 }} /> Progreso de hoy</span>
+            <span style={{ color: '#534AB7', fontWeight: 600 }}>{correctedToday.length} de {totalToday} corregidas</span>
+          </div>
+          <div style={{ height: 8, background: '#f5f4f0', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ width: `${progressPct}%`, height: '100%', background: '#534AB7', borderRadius: 99, transition: 'width .4s' }} />
+          </div>
+        </div>
+
+        {/* Add form */}
+        <form onSubmit={addItem} style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #AFA9EC', padding: '14px', marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#534AB7', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <i className="ti ti-plus" style={{ fontSize: 15 }} /> Cargar nueva
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+            <div>
+              <label style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'block', marginBottom: 4 }}>Company code</label>
+              <select value={companyCode} onChange={e => setCompanyCode(e.target.value as '4001' | '4015')} style={{ ...inputStyle, cursor: 'pointer' }}>
+                <option value="4001">4001</option>
+                <option value="4015">4015</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'block', marginBottom: 4 }}>N° Invoice</label>
+              <input value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)} placeholder="Ej: FC-0001A" style={inputStyle} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'block', marginBottom: 4 }}>Vendor</label>
+            <input value={vendor} onChange={e => setVendor(e.target.value)} placeholder="N° vendor - Razón social" style={inputStyle} />
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'block', marginBottom: 4 }}>Price / base imponible</label>
+            <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" style={{ ...inputStyle, ...mono }} />
+          </div>
+          {formError && (
+            <div style={{ fontSize: 12, color: '#A32D2D', background: '#FCEBEB', padding: '6px 10px', borderRadius: 7, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <i className="ti ti-alert-circle" style={{ fontSize: 14 }} /> {formError}
+            </div>
+          )}
+          <button type="submit" disabled={saving}
+            style={{ width: '100%', padding: '10px', borderRadius: 9, border: 'none', background: '#534AB7', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...font }}>
+            {saving ? <><i className="ti ti-loader-2" style={{ fontSize: 14 }} /> Guardando...</> : <><i className="ti ti-check" style={{ fontSize: 14 }} /> Agregar pendiente</>}
+          </button>
+        </form>
+
+        {/* List grouped by vendor */}
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#888780' }}>
+            <i className="ti ti-loader-2" style={{ fontSize: 28, display: 'block', marginBottom: 8 }} /> Cargando...
+          </div>
+        ) : vendorGroups.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#b4b2a9' }}>
+            <i className={`ti ${statusView === 'pending' ? 'ti-circle-check' : 'ti-clock'}`} style={{ fontSize: 32, display: 'block', marginBottom: 8 }} />
+            <div style={{ fontSize: 13, fontWeight: 300 }}>
+              {statusView === 'pending' ? '¡Sin pendientes! Todo corregido.' : 'Todavía no corregiste nada hoy.'}
+            </div>
+          </div>
+        ) : (
+          vendorGroups.map(([vendorName, list]) => (
+            <div key={vendorName} style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#888780', textTransform: 'uppercase', letterSpacing: '.05em', margin: '0 2px 6px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <i className="ti ti-building-store" style={{ fontSize: 13 }} /> {vendorName}
+              </div>
+              {list.map(it => {
+                const isOwn = it.added_by_id === collaborator.id
+                const dayInfo = statusView === 'pending' ? daysAgoInfo(it.added_at) : null
+                const isBusy = busyId === it.id
+                return (
+                  <div key={it.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '10px 13px',
+                    border: `0.5px solid ${dayInfo?.warn ? '#e8a0a0' : '#e5e3db'}`,
+                    background: dayInfo?.warn ? '#FCEBEB22' : '#fff',
+                    borderRadius: 10, marginBottom: 6,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: 3 }}>
+                        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: '#CECBF6', color: '#3C3489' }}>{it.company_code}</span>
+                        {dayInfo && (
+                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: dayInfo.warn ? '#FCEBEB' : '#EAF3DE', color: dayInfo.warn ? '#A32D2D' : '#3B6D11' }}>
+                            {dayInfo.label}
+                          </span>
+                        )}
+                        {statusView === 'done' && it.corrected_at && (
+                          <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 20, background: '#EAF3DE', color: '#3B6D11' }}>
+                            {new Date(it.corrected_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        )}
+                        {!isOwn && (
+                          <span style={{ fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 20, background: '#F1EFE8', color: '#5f5e5a' }}>
+                            de {statusView === 'pending' ? it.added_by_name : it.corrected_by_name}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#1a1a18' }}>{it.invoice_number}</div>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18', ...mono }}>$ {formatAmount(it.amount)}</div>
+                    {statusView === 'pending' ? (
+                      <>
+                        <button onClick={() => markCorrected(it.id)} disabled={isBusy} title="Marcar corregido"
+                          style={{ width: 30, height: 30, borderRadius: '50%', border: '1.8px solid #534AB7', background: 'transparent', color: '#534AB7', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isBusy ? 'not-allowed' : 'pointer', flexShrink: 0 }}>
+                          {isBusy ? <i className="ti ti-loader-2" style={{ fontSize: 15 }} /> : <i className="ti ti-check" style={{ fontSize: 15 }} />}
+                        </button>
+                        {isOwn && (
+                          <button onClick={() => removePending(it.id)} disabled={isBusy} title="Eliminar"
+                            style={{ width: 24, height: 24, borderRadius: 6, border: 'none', background: 'transparent', color: '#b4b2a9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                            <i className="ti ti-x" style={{ fontSize: 14 }} />
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#534AB7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <i className="ti ti-check" style={{ fontSize: 15 }} />
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          ))
+        )}
+
+        <div style={{ fontSize: 10, color: '#b4b2a9', marginTop: 10, textAlign: 'center' }}>
+          Las pendientes no desaparecen solas — quedan hasta que alguien las marque corregidas.
+        </div>
+      </div>
+    </div>
+  )
+}

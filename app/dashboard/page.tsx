@@ -169,7 +169,7 @@ export default function Dashboard() {
         {showAvatar && <AvatarPicker collaboratorId={collaborator.id} current={collaborator.avatar || null} onSelect={onAvatarSelected} onClose={() => setShowAvatar(false)} />}
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button onClick={() => setShowAvatar(true)} title="Cambiar avatar"
               style={{ width: 52, height: 52, borderRadius: '50%', border: '2.5px solid #CECBF6', padding: 0, cursor: 'pointer', overflow: 'hidden', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -184,6 +184,9 @@ export default function Dashboard() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 7 }}>
+            <button onClick={() => router.push('/base-imponible')} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid #AFA9EC', background: '#CECBF6', fontSize: 11, cursor: 'pointer', color: '#3C3489', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
+              <i className="ti ti-receipt-tax" style={{ fontSize: 14 }} /> Base imponible
+            </button>
             <button onClick={handleExport} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid #C0DD97', background: '#EAF3DE', fontSize: 11, cursor: 'pointer', color: '#3B6D11', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
               <i className="ti ti-file-spreadsheet" style={{ fontSize: 14 }} /> Excel
             </button>
