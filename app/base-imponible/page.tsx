@@ -44,6 +44,30 @@ function formatAmount(n: number) {
   return n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
+function diffDaysFromToday(dateStr: string) {
+  const today = localToday()
+  return Math.round((new Date(today + 'T12:00').getTime() - new Date(dateStr + 'T12:00').getTime()) / 86400000)
+}
+
+function dayLabel(dateStr: string) {
+  const today = localToday()
+  if (dateStr === today) return 'Hoy'
+  if (dateStr === localOffsetDate(today, -1)) return 'Ayer'
+  const dt = new Date(dateStr + 'T12:00')
+  const wd = dt.toLocaleDateString('es-AR', { weekday: 'long' })
+  return `${wd.charAt(0).toUpperCase()}${wd.slice(1)} ${dt.getDate()}`
+}
+
+// Genera chips de día (máx. 5, los más recientes) a partir de fechas que
+// realmente tienen datos — nunca se muestran días vacíos.
+function buildDayChips(dates: string[], maxDays = 5) {
+  const counts: Record<string, number> = {}
+  for (const d of dates) counts[d] = (counts[d] || 0) + 1
+  const sorted = Object.keys(counts).sort((a, b) => b.localeCompare(a))
+  const top = sorted.slice(0, maxDays)
+  return top.map(d => ({ date: d, label: dayLabel(d), count: counts[d], warn: diffDaysFromToday(d) >= 2 }))
+}
+
 // Interpreta el monto sin importar si lo escribiste en formato
 // argentino (5.000.000,00) o en formato US/Coupa-SAP (5,000,000.00).
 // Detecta cuál símbolo es el separador decimal mirando cuál aparece último.
@@ -98,6 +122,13 @@ export default function BaseImponiblePage() {
   const [formError, setFormError] = useState('')
   const [saving, setSaving] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
+
+  // Chips de día — 'all' o una fecha YYYY-MM-DD específica
+  const [pendingDayFilter, setPendingDayFilter] = useState<string>('all')
+  const [doneDayFilter, setDoneDayFilter] = useState<string>(localToday())
+
+  // Confirmación de borrado en Corregidas (2 pasos)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   function resetInactivity() {
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
@@ -173,20 +204,38 @@ export default function BaseImponiblePage() {
     if (res.ok) setItems(prev => prev.filter(it => it.id !== id))
   }
 
+  // Borra una corrección ya marcada como "done". El toque ya insertado en
+  // invoice_actions NO se toca — la auditoría queda intacta a propósito.
+  async function deleteCorrected(id: string) {
+    setBusyId(id)
+    const res = await fetch(`/api/base-imponible/${id}`, { method: 'DELETE' })
+    setBusyId(null)
+    setConfirmDeleteId(null)
+    if (res.ok) setItems(prev => prev.filter(it => it.id !== id))
+  }
+
   if (!collaborator) return null
 
   const today = localToday()
 
-  // ── Filtros ──
+  // ── Filtros base ──
   const scopedItems = items.filter(it => scope === 'mine' ? it.added_by_id === collaborator.id : true)
   const pendingAll = scopedItems.filter(it => it.status === 'pending')
-  const correctedToday = scopedItems.filter(it => it.status === 'done' && it.corrected_at && localDateOf(it.corrected_at) === today)
+  const doneAll = scopedItems.filter(it => it.status === 'done' && it.corrected_at)
 
-  const visibleItems = statusView === 'pending' ? pendingAll : correctedToday
-
-  // Progreso: de todo lo que había que resolver hoy (pendiente actual + ya corregido hoy), cuánto se resolvió
+  // Progreso de HOY: siempre fijo, sin importar qué chip esté mirando el usuario
+  const correctedToday = doneAll.filter(it => localDateOf(it.corrected_at!) === today)
   const totalToday = pendingAll.length + correctedToday.length
   const progressPct = totalToday > 0 ? Math.round((correctedToday.length / totalToday) * 100) : 0
+
+  // ── Chips de día (según pestaña activa) ──
+  const pendingChips = buildDayChips(pendingAll.map(it => localDateOf(it.added_at)))
+  const doneChips = buildDayChips(doneAll.map(it => localDateOf(it.corrected_at!)))
+
+  // ── Lista visible según pestaña + chip seleccionado ──
+  const visibleItems = statusView === 'pending'
+    ? (pendingDayFilter === 'all' ? pendingAll : pendingAll.filter(it => localDateOf(it.added_at) === pendingDayFilter))
+    : (doneDayFilter === 'all' ? doneAll : doneAll.filter(it => localDateOf(it.corrected_at!) === doneDayFilter))
 
   // Agrupar por vendor
   const grouped = new Map<string, Correction[]>()
@@ -231,15 +280,50 @@ export default function BaseImponiblePage() {
         </div>
 
         {/* Toggle Pendientes / Corregidas */}
-        <div style={{ display: 'flex', background: '#fff', borderRadius: 10, padding: 3, marginBottom: 14, border: '0.5px solid #e5e3db', gap: 2 }}>
+        <div style={{ display: 'flex', background: '#fff', borderRadius: 10, padding: 3, marginBottom: 10, border: '0.5px solid #e5e3db', gap: 2 }}>
           {(['pending', 'done'] as StatusView[]).map(s => (
             <button key={s} onClick={() => setStatusView(s)}
               style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 500, background: statusView === s ? '#534AB7' : 'transparent', color: statusView === s ? '#fff' : '#888780', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, ...font }}>
               <i className={`ti ${s === 'pending' ? 'ti-clock' : 'ti-circle-check'}`} style={{ fontSize: 13 }} />
-              {s === 'pending' ? `Pendientes (${pendingAll.length})` : `Corregidas hoy (${correctedToday.length})`}
+              {s === 'pending' ? `Pendientes (${pendingAll.length})` : `Corregidas (${doneAll.length})`}
             </button>
           ))}
         </div>
+
+        {/* Chips de día */}
+        <div style={{ fontSize: 10, color: '#b4b2a9', fontWeight: 500, margin: '6px 2px 6px', textTransform: 'uppercase', letterSpacing: '.05em', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <i className="ti ti-calendar" style={{ fontSize: 11 }} /> {statusView === 'pending' ? 'Filtrar por día que se cargó' : 'Filtrar por día corregido'}
+        </div>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4, marginBottom: 12 }}>
+          {(() => {
+            const chips = statusView === 'pending' ? pendingChips : doneChips
+            const activeFilter = statusView === 'pending' ? pendingDayFilter : doneDayFilter
+            const setFilter = statusView === 'pending' ? setPendingDayFilter : setDoneDayFilter
+            const allTotal = statusView === 'pending' ? pendingAll.length : doneAll.length
+            return (
+              <>
+                <button onClick={() => setFilter('all')}
+                  style={{ flexShrink: 0, padding: '6px 13px', borderRadius: 20, fontSize: 12, fontWeight: 500, border: `1.3px solid ${activeFilter === 'all' ? '#534AB7' : '#e5e3db'}`, background: activeFilter === 'all' ? '#534AB7' : '#fff', color: activeFilter === 'all' ? '#fff' : '#5f5e5a', cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, ...font }}>
+                  Todos <span style={{ fontSize: 10, background: activeFilter === 'all' ? 'rgba(255,255,255,.25)' : 'rgba(0,0,0,.08)', padding: '1px 6px', borderRadius: 10 }}>{allTotal}</span>
+                </button>
+                {chips.map(c => (
+                  <button key={c.date} onClick={() => setFilter(c.date)}
+                    style={{
+                      flexShrink: 0, padding: '6px 13px', borderRadius: 20, fontSize: 12, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, ...font,
+                      border: `1.3px solid ${activeFilter === c.date ? '#534AB7' : (c.warn ? '#e8a0a0' : '#e5e3db')}`,
+                      background: activeFilter === c.date ? '#534AB7' : '#fff',
+                      color: activeFilter === c.date ? '#fff' : (c.warn ? '#A32D2D' : '#5f5e5a'),
+                    }}>
+                    {c.label} <span style={{ fontSize: 10, background: activeFilter === c.date ? 'rgba(255,255,255,.25)' : 'rgba(0,0,0,.08)', padding: '1px 6px', borderRadius: 10 }}>{c.count}</span>
+                  </button>
+                ))}
+              </>
+            )
+          })()}
+        </div>
+        {statusView === 'pending' && pendingChips.some(c => c.warn) && (
+          <div style={{ fontSize: 10, color: '#A32D2D', marginTop: -6, marginBottom: 10 }}>Los chips en rojo tienen pendientes de 2+ días</div>
+        )}
 
         {/* Progress card */}
         <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #e5e3db', padding: '13px 16px', marginBottom: 14 }}>
@@ -250,6 +334,11 @@ export default function BaseImponiblePage() {
           <div style={{ height: 8, background: '#f5f4f0', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{ width: `${progressPct}%`, height: '100%', background: '#534AB7', borderRadius: 99, transition: 'width .4s' }} />
           </div>
+          {scope === 'all' && statusView === 'done' && (
+            <div style={{ fontSize: 10, color: '#534AB7', fontWeight: 500, marginTop: 7, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <i className="ti ti-users" style={{ fontSize: 12 }} /> Total del equipo en este filtro: {visibleItems.length} factura{visibleItems.length !== 1 ? 's' : ''}
+            </div>
+          )}
         </div>
 
         {/* Add form */}
@@ -299,7 +388,9 @@ export default function BaseImponiblePage() {
           <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#b4b2a9' }}>
             <i className={`ti ${statusView === 'pending' ? 'ti-circle-check' : 'ti-clock'}`} style={{ fontSize: 32, display: 'block', marginBottom: 8 }} />
             <div style={{ fontSize: 13, fontWeight: 300 }}>
-              {statusView === 'pending' ? '¡Sin pendientes! Todo corregido.' : 'Todavía no corregiste nada hoy.'}
+              {statusView === 'pending'
+                ? (pendingDayFilter === 'all' ? '¡Sin pendientes! Todo corregido.' : 'Nada pendiente para ese día.')
+                : (doneDayFilter === 'all' ? 'Todavía no hay correcciones.' : (doneDayFilter === today ? 'Todavía no corregiste nada hoy.' : 'Sin correcciones ese día.'))}
             </div>
           </div>
         ) : (
@@ -354,10 +445,28 @@ export default function BaseImponiblePage() {
                           </button>
                         )}
                       </>
-                    ) : (
-                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#534AB7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <i className="ti ti-check" style={{ fontSize: 15 }} />
+                    ) : confirmDeleteId === it.id ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                        <span style={{ fontSize: 11, color: '#A32D2D', fontWeight: 500, whiteSpace: 'nowrap' }}>¿Eliminar?</span>
+                        <button onClick={() => deleteCorrected(it.id)} disabled={isBusy}
+                          style={{ padding: '4px 10px', borderRadius: 6, border: 'none', background: '#A32D2D', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', ...font }}>
+                          Sí
+                        </button>
+                        <button onClick={() => setConfirmDeleteId(null)}
+                          style={{ padding: '4px 10px', borderRadius: 6, border: '0.5px solid #e5e3db', background: 'transparent', fontSize: 11, cursor: 'pointer', color: '#888780', ...font }}>
+                          No
+                        </button>
                       </div>
+                    ) : (
+                      <>
+                        <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#534AB7', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <i className="ti ti-check" style={{ fontSize: 15 }} />
+                        </div>
+                        <button onClick={() => setConfirmDeleteId(it.id)} title="Eliminar"
+                          style={{ width: 26, height: 26, borderRadius: 7, border: 'none', background: 'transparent', color: '#b4b2a9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                          <i className="ti ti-trash" style={{ fontSize: 14 }} />
+                        </button>
+                      </>
                     )}
                   </div>
                 )
