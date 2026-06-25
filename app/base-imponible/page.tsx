@@ -41,7 +41,8 @@ function daysAgoInfo(addedAtIso: string) {
 }
 
 function formatAmount(n: number) {
-  return n.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  // Mismo formato que Coupa/SAP: coma de miles, punto decimal (ej: 4,000,000.00)
+  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function diffDaysFromToday(dateStr: string) {
@@ -365,8 +366,8 @@ export default function BaseImponiblePage() {
           </div>
           <div style={{ marginBottom: 14 }}>
             <label style={{ fontSize: 11, color: '#888780', fontWeight: 500, display: 'block', marginBottom: 4 }}>Price / base imponible</label>
-            <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" style={{ ...inputStyle, ...mono }} />
-            <div style={{ fontSize: 10, color: '#b4b2a9', marginTop: 4 }}>Acepta cualquier formato: 5.000.000,00 o 5,000,000.00</div>
+            <input value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" inputMode="decimal" style={{ ...inputStyle, ...mono }} />
+            <div style={{ fontSize: 10, color: '#b4b2a9', marginTop: 4 }}>Acepta cualquier formato: 5,000,000.00 (Coupa/SAP) o 5.000.000,00 (AR)</div>
           </div>
           {formError && (
             <div style={{ fontSize: 12, color: '#A32D2D', background: '#FCEBEB', padding: '6px 10px', borderRadius: 7, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>

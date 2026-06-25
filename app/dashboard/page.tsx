@@ -183,7 +183,12 @@ export default function Dashboard() {
               <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 300 }}>{isSupervisor ? '⭐ Supervisor' : 'Colaborador'}</div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 7 }}>
+          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+            {isSupervisor && (
+              <button onClick={() => router.push('/productividad')} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid #C0DD97', background: '#0F6E5622', fontSize: 11, cursor: 'pointer', color: '#0F6E56', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
+                <i className="ti ti-gauge" style={{ fontSize: 14 }} /> Productividad
+              </button>
+            )}
             <button onClick={() => router.push('/base-imponible')} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid #AFA9EC', background: '#CECBF6', fontSize: 11, cursor: 'pointer', color: '#3C3489', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
               <i className="ti ti-receipt-tax" style={{ fontSize: 14 }} /> Base imponible
             </button>
