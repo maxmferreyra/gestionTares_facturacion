@@ -2,20 +2,36 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap');
 
 * { box-sizing: border-box; }
 
 :root {
-  --bg: #f5f4f0;
+  /* Paleta de marca — verdes corporativos */
+  --brand-darkest: #051F20;
+  --brand-dark: #0B2B26;
+  --brand-dark2: #163832;
+  --brand: #235347;       /* color principal — reemplaza el violeta */
+  --brand-soft: #8EB69B;  /* acento secundario */
+  --brand-tint: #DAF1DE;  /* fondo suave */
+
+  /* Superficies */
+  --bg: #F4F7F5;          /* fondo general, verde casi imperceptible */
   --card: #ffffff;
-  --input-bg: #fafaf8;
-  --border: #e5e3db;
-  --text: #1a1a18;
-  --text2: #5f5e5a;
-  --text3: #888780;
-  --text4: #b4b2a9;
-  --hover: #f5f4f0;
+  --input-bg: #fafbfa;
+  --border: #E2E9E5;
+  --hover: #EFF5F1;
+
+  /* Texto */
+  --text: #0B2B26;
+  --text2: #4A5F58;
+  --text3: #7C9089;
+  --text4: #AEC0B7;
+
+  /* Semánticos (NO cambian con el rebranding — mantienen su significado) */
+  --success-bg: #EAF3DE; --success: #3B6D11;
+  --warning-bg: #FAEEDA; --warning: #854F0B;
+  --error-bg: #FCEBEB;   --error: #A32D2D;
 }
 
 body {
@@ -23,9 +39,7 @@ body {
   font-family: 'Montserrat', sans-serif;
   color: var(--text);
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: background .2s, color .2s;
 }
 
 input, select, textarea { color: var(--text); }

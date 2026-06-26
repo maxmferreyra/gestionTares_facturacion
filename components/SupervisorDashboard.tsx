@@ -143,7 +143,7 @@ export default function SupervisorDashboard() {
           <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
             <i className="ti ti-hand-click" style={{ fontSize: 12 }} />Toques
           </div>
-          <div style={{ fontSize: 22, fontWeight: 600, color: '#534AB7' }}>{totalActions}</div>
+          <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--brand)' }}>{totalActions}</div>
         </div>
         <div style={{ background: 'var(--card)', borderRadius: 10, padding: '12px 8px', border: '0.5px solid var(--border)', textAlign: 'center' }}>
           <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
@@ -179,10 +179,10 @@ export default function SupervisorDashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 10, color: 'var(--text4)', fontWeight: 500, minWidth: 36 }}>{dateLabel}</span>
                     {collabFilter === 'all' && (
-                      <span style={{ fontSize: 10, fontWeight: 600, color: '#3C3489', background: '#CECBF6', padding: '1px 7px', borderRadius: 20 }}>{getName(t.collaborator_id)}</span>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--brand-dark)', background: 'var(--brand-tint)', padding: '1px 7px', borderRadius: 20 }}>{getName(t.collaborator_id)}</span>
                     )}
                     {t.start_time && t.end_time && (
-                      <span style={{ fontSize: 11, color: '#534AB7', fontWeight: 600 }}>{t.start_time.slice(0, 5)}–{t.end_time.slice(0, 5)}</span>
+                      <span style={{ fontSize: 11, color: 'var(--brand)', fontWeight: 600 }}>{t.start_time.slice(0, 5)}–{t.end_time.slice(0, 5)}</span>
                     )}
                     {dur && <span style={{ fontSize: 10, background: '#EAF3DE', color: '#3B6D11', padding: '1px 7px', borderRadius: 20, fontWeight: 600 }}>{dur}</span>}
                     {t.tag && <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 6, background: tc.bg, color: tc.color, fontWeight: 500 }}>{t.tag}</span>}
@@ -240,12 +240,12 @@ export default function SupervisorDashboard() {
                 <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text4)', minWidth: 18 }}>{medal || `${i + 1}.`}</span>
                 {avatar
                   ? <img src={avatar} alt="" style={{ width: 26, height: 26, borderRadius: '50%', objectFit: 'contain', background: '#fff', flexShrink: 0 }} />
-                  : <div style={{ width: 26, height: 26, borderRadius: '50%', background: '#CECBF6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#3C3489', flexShrink: 0 }}>{getInitials(r.id)}</div>}
+                  : <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: 'var(--brand-dark)', flexShrink: 0 }}>{getInitials(r.id)}</div>}
                 <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', flex: 1 }}>{getName(r.id)}{isSup && ' ⭐'}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#534AB7' }}>{r.count} toques</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--brand)' }}>{r.count} toques</span>
               </div>
               <div style={{ height: 7, background: 'var(--bg)', borderRadius: 99, overflow: 'hidden', marginLeft: 26 }}>
-                <div style={{ width: `${(r.count / maxRanking) * 100}%`, height: '100%', background: i === 0 ? '#BA7517' : '#534AB7', borderRadius: 99, transition: 'width .4s' }} />
+                <div style={{ width: `${(r.count / maxRanking) * 100}%`, height: '100%', background: i === 0 ? '#BA7517' : 'var(--brand)', borderRadius: 99, transition: 'width .4s' }} />
               </div>
             </div>
           )

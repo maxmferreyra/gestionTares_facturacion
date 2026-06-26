@@ -10,10 +10,13 @@ import InvoiceActions from '@/components/InvoiceActions'
 import HelpSection from '@/components/HelpSection'
 import SupervisorDashboard from '@/components/SupervisorDashboard'
 import UserManagement from '@/components/UserManagement'
+import InicioCalendar from '@/components/InicioCalendar'
+import InicioSummary from '@/components/InicioSummary'
 import Popups from '@/components/Popups'
 import AvatarPicker from '@/components/AvatarPicker'
+import Sidebar from '@/components/Sidebar'
 
-type View = 'daily' | 'weekly' | 'invoices' | 'help' | 'supervisor' | 'users'
+type View = 'inicio' | 'daily' | 'weekly' | 'invoices' | 'help' | 'supervisor' | 'users'
 
 const WORK_START = 9 * 60, WORK_END = 18 * 60, WORK_TOTAL = WORK_END - WORK_START
 const INACTIVITY_LIMIT = 8 * 60 * 60 * 1000
@@ -34,8 +37,8 @@ function getMotivation(workedMin: number): { msg: string; color: string; bg: str
   if (pct < 0.3)  return { msg: 'Buen comienzo, seguí sumando 👍', color: '#185FA5', bg: '#E6F1FB' }
   if (pct < 0.55) return { msg: 'Vas por la mitad, bien 💪', color: '#854F0B', bg: '#FAEEDA' }
   if (pct < 0.85) return { msg: 'Buen avance, falta poco 🔥', color: '#854F0B', bg: '#FAEEDA' }
-  if (pct < 1)    return { msg: 'Casi completás tu jornada ⚡', color: '#3C3489', bg: '#CECBF6' }
-  return { msg: '¡Jornada completa! Bien hecho ✓', color: '#0F6E56', bg: '#EAF3DE' }
+  if (pct < 1)    return { msg: 'Casi completás tu jornada ⚡', color: 'var(--brand)', bg: 'var(--brand-tint)' }
+  return { msg: '¡Jornada completa! Bien hecho ✓', color: 'var(--success)', bg: 'var(--success-bg)' }
 }
 function timeToMin(t: string) { const [h, m] = t.split(':').map(Number); return h * 60 + m }
 
@@ -43,7 +46,7 @@ export default function Dashboard() {
   const router = useRouter()
   const [collaborator, setCollaborator] = useState<{ id: string; name: string; role: string; avatar?: string | null } | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
-  const [view, setView] = useState<View>('daily')
+  const [view, setView] = useState<View>('inicio')
   const [showAddForm, setShowAddForm] = useState(false)
   const [showAvatar, setShowAvatar] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -130,7 +133,6 @@ export default function Dashboard() {
     if (!t.end_time) return latest
     return (!latest || t.end_time > latest) ? t.end_time : latest
   }, null)
-  const initials = collaborator?.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'
   const font = { fontFamily: 'Montserrat, sans-serif' }
   const isSupervisor = collaborator?.role === 'supervisor'
 
@@ -147,109 +149,97 @@ export default function Dashboard() {
   }
   if (cursor < WORK_END) segments.push({ from: cursor, to: WORK_END, covered: false })
 
-  type NavView = { key: View; label: string; icon: string; supervisorOnly?: boolean }
-  const VIEWS: NavView[] = [
-    { key: 'daily', label: 'Diario', icon: 'ti-calendar-day' },
-    { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },
-    { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
-    { key: 'help', label: 'Ayuda', icon: 'ti-help-circle' },
-    ...(isSupervisor ? [
-      { key: 'supervisor' as View, label: 'Equipo', icon: 'ti-chart-bar', supervisorOnly: true },
-      { key: 'users' as View, label: 'Usuarios', icon: 'ti-users-group', supervisorOnly: true },
-    ] : []),
-  ]
-
   if (!collaborator) return null
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '1.5rem 1rem' }}>
-      <div style={{ width: '80%', maxWidth: 680, ...font }}>
+    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', gap: 22, padding: 22, background: 'var(--bg)', ...font }}>
 
-        <Popups userName={collaborator.name} />
-        {showAvatar && <AvatarPicker collaboratorId={collaborator.id} current={collaborator.avatar || null} onSelect={onAvatarSelected} onClose={() => setShowAvatar(false)} />}
+      <Sidebar
+        collaborator={collaborator}
+        activeKey={view}
+        onNavigate={(key) => setView(key as View)}
+        onAvatarClick={() => setShowAvatar(true)}
+      />
 
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button onClick={() => setShowAvatar(true)} title="Cambiar avatar"
-              style={{ width: 52, height: 52, borderRadius: '50%', border: '2.5px solid #CECBF6', padding: 0, cursor: 'pointer', overflow: 'hidden', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {collaborator.avatar
-                ? <img src={collaborator.avatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#ffffff' }} />
-                : <span style={{ fontSize: 16, fontWeight: 600, color: '#3C3489' }}>{initials}</span>}
-            </button>
-            <div>
-              <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text)', letterSpacing: '0.02em' }}>Milo</div>
-              <div style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 500 }}>{collaborator.name}</div>
-              <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 300 }}>{isSupervisor ? '⭐ Supervisor' : 'Colaborador'}</div>
+      <Popups userName={collaborator.name} />
+      {showAvatar && <AvatarPicker collaboratorId={collaborator.id} current={collaborator.avatar || null} onSelect={onAvatarSelected} onClose={() => setShowAvatar(false)} />}
+
+      <div style={{ flex: 1, minWidth: 0, maxWidth: 880 }}>
+
+        {/* Topbar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 19, fontWeight: 600, color: 'var(--text)' }}>
+              {view === 'inicio' ? 'Inicio' : view === 'daily' ? `Hola, ${collaborator.name.split(' ')[0]} 👋` : view === 'weekly' ? 'Resumen semanal' : view === 'invoices' ? 'Facturas' : view === 'help' ? 'Ayuda' : view === 'supervisor' ? 'Equipo' : 'Usuarios'}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 300, marginTop: 2 }}>
+              {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-            {isSupervisor && (
-              <button onClick={() => router.push('/productividad')} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid #C0DD97', background: '#0F6E5622', fontSize: 11, cursor: 'pointer', color: '#0F6E56', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
-                <i className="ti ti-gauge" style={{ fontSize: 14 }} /> Productividad
-              </button>
-            )}
-            <button onClick={() => router.push('/base-imponible')} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid #AFA9EC', background: '#CECBF6', fontSize: 11, cursor: 'pointer', color: '#3C3489', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
-              <i className="ti ti-receipt-tax" style={{ fontSize: 14 }} /> Base imponible
+          <div style={{ display: 'flex', gap: 7 }}>
+            <button onClick={handleExport} title="Exportar a Excel" style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: 'var(--card)', fontSize: 14, cursor: 'pointer', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(11,43,38,0.08)' }}>
+              <i className="ti ti-file-spreadsheet" />
             </button>
-            <button onClick={handleExport} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid #C0DD97', background: '#EAF3DE', fontSize: 11, cursor: 'pointer', color: '#3B6D11', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
-              <i className="ti ti-file-spreadsheet" style={{ fontSize: 14 }} /> Excel
-            </button>
-            <button onClick={logout} style={{ padding: '6px 12px', borderRadius: 8, border: '0.5px solid var(--border)', background: 'var(--card)', fontSize: 11, cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 5, ...font }}>
-              <i className="ti ti-logout" style={{ fontSize: 14 }} /> Salir
+            <button onClick={logout} title="Salir" style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: 'var(--card)', fontSize: 14, cursor: 'pointer', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(11,43,38,0.08)' }}>
+              <i className="ti ti-logout" />
             </button>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div style={{ display: 'flex', background: 'var(--card)', borderRadius: 10, padding: 3, marginBottom: '1.25rem', border: '0.5px solid var(--border)', gap: 2, overflowX: 'auto' }}>
-          {VIEWS.map(v => (
-            <button key={v.key} onClick={() => setView(v.key)}
-              style={{ flex: '1 0 auto', padding: '7px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 500, background: view === v.key ? (v.supervisorOnly ? '#1D9E75' : '#534AB7') : 'transparent', color: view === v.key ? 'white' : 'var(--text3)', transition: 'all .15s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, whiteSpace: 'nowrap', ...font }}>
-              <i className={`ti ${v.icon}`} style={{ fontSize: 13 }} />{v.label}
-            </button>
-          ))}
-        </div>
+        {/* INICIO */}
+        {view === 'inicio' && (
+          <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
+            <InicioSummary
+              myWorkedLabel={workedLabel || '0h'}
+              myUncoveredLabel={uncoveredMin === 0 ? '0h' : uncoveredLabel}
+              myTaskCount={tasks.length}
+              collaboratorId={collaborator.id}
+            />
+            <div style={{ flex: '1.2 1 340px', minWidth: 0 }}>
+              <InicioCalendar collaborator={collaborator} />
+            </div>
+          </div>
+        )}
 
         {/* DAILY */}
         {view === 'daily' && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--card)', borderRadius: 10, padding: '9px 14px', marginBottom: '1rem', border: '0.5px solid var(--border)' }}>
-              <button onClick={() => setCurrentDate(d => offsetDate(d, -1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#534AB7', padding: '4px', display: 'flex' }}><i className="ti ti-chevron-left" style={{ fontSize: 18 }} /></button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--card)', borderRadius: 12, padding: '9px 14px', marginBottom: '1rem', border: '0.5px solid var(--border)' }}>
+              <button onClick={() => setCurrentDate(d => offsetDate(d, -1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--brand)', padding: '4px', display: 'flex' }}><i className="ti ti-chevron-left" style={{ fontSize: 18 }} /></button>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize', color: 'var(--text)' }}>{formatDate(currentDate)}</div>
                 {currentDate !== today && <div style={{ fontSize: 10, color: 'var(--text4)', fontWeight: 300 }}>{new Date(currentDate + 'T12:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>}
               </div>
-              <button onClick={() => setCurrentDate(d => offsetDate(d, 1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#534AB7', padding: '4px', display: 'flex' }}><i className="ti ti-chevron-right" style={{ fontSize: 18 }} /></button>
+              <button onClick={() => setCurrentDate(d => offsetDate(d, 1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--brand)', padding: '4px', display: 'flex' }}><i className="ti ti-chevron-right" style={{ fontSize: 18 }} /></button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: '1rem' }}>
-              <div style={{ background: 'var(--card)', borderRadius: 10, padding: '11px 13px', border: '0.5px solid var(--border)' }}>
+              <div style={{ background: 'var(--card)', borderRadius: 12, padding: '11px 13px', border: '0.5px solid var(--border)' }}>
                 <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}><i className="ti ti-hourglass-filled" style={{ fontSize: 12 }} /> Horas registradas</div>
-                <div style={{ fontSize: 22, fontWeight: 600, color: '#534AB7' }}>{workedLabel || '0h'}</div>
+                <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--brand)', fontFamily: "'JetBrains Mono', monospace" }}>{workedLabel || '0h'}</div>
                 <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 1 }}>de 9h laborales</div>
               </div>
-              <div style={{ background: 'var(--card)', borderRadius: 10, padding: '11px 13px', border: '0.5px solid var(--border)' }}>
+              <div style={{ background: 'var(--card)', borderRadius: 12, padding: '11px 13px', border: '0.5px solid var(--border)' }}>
                 <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}><i className="ti ti-clock-x" style={{ fontSize: 12 }} /> Sin registrar</div>
-                <div style={{ fontSize: 22, fontWeight: 600, color: uncoveredMin === 0 ? '#0F6E56' : '#BA7517' }}>{uncoveredMin === 0 ? '0h' : uncoveredLabel}</div>
+                <div style={{ fontSize: 22, fontWeight: 600, color: uncoveredMin === 0 ? 'var(--success)' : 'var(--warning)', fontFamily: "'JetBrains Mono', monospace" }}>{uncoveredMin === 0 ? '0h' : uncoveredLabel}</div>
                 <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 1 }}>{tasks.length} tarea{tasks.length !== 1 ? 's' : ''}</div>
               </div>
             </div>
 
             {tasks.some(t => t.start_time && t.end_time) && (
-              <div style={{ background: 'var(--card)', borderRadius: 10, padding: '11px 14px', marginBottom: '1rem', border: '0.5px solid var(--border)' }}>
+              <div style={{ background: 'var(--card)', borderRadius: 12, padding: '11px 14px', marginBottom: '1rem', border: '0.5px solid var(--border)' }}>
                 <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, marginBottom: 7, display: 'flex', justifyContent: 'space-between' }}>
                   <span><i className="ti ti-timeline" style={{ fontSize: 12, verticalAlign: -1 }} /> Cobertura del día</span>
                   <span style={{ color: motivation.color }}>{Math.round(workedMin / WORK_TOTAL * 100)}%</span>
                 </div>
                 <div style={{ height: 8, borderRadius: 99, background: 'var(--bg)', display: 'flex', overflow: 'hidden' }}>
-                  {segments.map((seg, i) => <div key={i} style={{ width: `${(seg.to - seg.from) / WORK_TOTAL * 100}%`, background: seg.covered ? '#534AB7' : 'var(--bg)' }} />)}
+                  {segments.map((seg, i) => <div key={i} style={{ width: `${(seg.to - seg.from) / WORK_TOTAL * 100}%`, background: seg.covered ? 'var(--brand)' : 'var(--bg)' }} />)}
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 9, color: 'var(--text4)', marginTop: 4 }}><span>09:00</span><span>12:00</span><span>15:00</span><span>18:00</span></div>
               </div>
             )}
 
-            <div style={{ background: motivation.bg, borderRadius: 10, padding: '9px 13px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ background: motivation.bg, borderRadius: 12, padding: '9px 13px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 8 }}>
               <i className="ti ti-mood-smile" style={{ fontSize: 16, color: motivation.color }} />
               <span style={{ fontSize: 12, fontWeight: 500, color: motivation.color }}>{motivation.msg}</span>
             </div>
@@ -272,7 +262,7 @@ export default function Dashboard() {
 
             {showAddForm
               ? <AddTaskForm onAdd={addTask} onCancel={() => setShowAddForm(false)} defaultStartTime={lastTaskEndTime} />
-              : <button onClick={() => setShowAddForm(true)} style={{ width: '100%', padding: '10px', borderRadius: 10, border: '0.5px dashed var(--text4)', background: 'transparent', fontSize: 13, color: 'var(--text3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, ...font, fontWeight: 500 }}>
+              : <button onClick={() => setShowAddForm(true)} style={{ width: '100%', padding: '10px', borderRadius: 12, border: '0.5px dashed var(--text4)', background: 'transparent', fontSize: 13, color: 'var(--text3)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, ...font, fontWeight: 500 }}>
                   <i className="ti ti-plus" style={{ fontSize: 15 }} /> Registrar tarea
                 </button>}
           </>
@@ -282,10 +272,10 @@ export default function Dashboard() {
 
         {view === 'invoices' && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--card)', borderRadius: 10, padding: '9px 14px', marginBottom: '1rem', border: '0.5px solid var(--border)' }}>
-              <button onClick={() => setCurrentDate(d => offsetDate(d, -1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#534AB7', padding: '4px', display: 'flex' }}><i className="ti ti-chevron-left" style={{ fontSize: 18 }} /></button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--card)', borderRadius: 12, padding: '9px 14px', marginBottom: '1rem', border: '0.5px solid var(--border)' }}>
+              <button onClick={() => setCurrentDate(d => offsetDate(d, -1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--brand)', padding: '4px', display: 'flex' }}><i className="ti ti-chevron-left" style={{ fontSize: 18 }} /></button>
               <div style={{ fontSize: 13, fontWeight: 600, textTransform: 'capitalize', color: 'var(--text)' }}>{formatDate(currentDate)}</div>
-              <button onClick={() => setCurrentDate(d => offsetDate(d, 1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#534AB7', padding: '4px', display: 'flex' }}><i className="ti ti-chevron-right" style={{ fontSize: 18 }} /></button>
+              <button onClick={() => setCurrentDate(d => offsetDate(d, 1))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--brand)', padding: '4px', display: 'flex' }}><i className="ti ti-chevron-right" style={{ fontSize: 18 }} /></button>
             </div>
             <InvoiceActions collaboratorId={collaborator.id} currentDate={currentDate} />
           </>
@@ -295,9 +285,6 @@ export default function Dashboard() {
         {view === 'supervisor' && isSupervisor && <SupervisorDashboard />}
         {view === 'users' && isSupervisor && <UserManagement currentUserId={collaborator.id} />}
       </div>
-
-      {/* Milo fijo esquina inferior derecha — solo el dibujo, sin fondo */}
-      <img src="/milo-fijo.png" alt="Milo" style={{ position: 'fixed', bottom: 16, right: 16, width: 120, height: 'auto', pointerEvents: 'none', zIndex: 50, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.2))' }} />
     </div>
   )
 }

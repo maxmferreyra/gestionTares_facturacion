@@ -37,7 +37,7 @@ export default function TaskItem({ task, onUpdate, onDelete }: Props) {
 
   if (editing) {
     return (
-      <div style={{ background: 'var(--card)', borderRadius: 12, border: '0.5px solid #AFA9EC', padding: '12px 14px', marginBottom: 8, ...font }}>
+      <div style={{ background: 'var(--card)', borderRadius: 12, border: '0.5px solid var(--brand-soft)', padding: '12px 14px', marginBottom: 8, ...font }}>
         <input value={title} onChange={e => setTitle(e.target.value)}
           style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '0.5px solid var(--border)', fontSize: 14, marginBottom: 10, outline: 'none', background: 'var(--input-bg)', color: 'var(--text)', ...font }} />
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 8 }}>
@@ -65,7 +65,7 @@ export default function TaskItem({ task, onUpdate, onDelete }: Props) {
           rows={2} style={{ width: '100%', padding: '7px 10px', borderRadius: 7, border: '0.5px solid var(--border)', fontSize: 13, outline: 'none', resize: 'vertical', marginBottom: 8, display: 'block', background: 'var(--input-bg)', color: 'var(--text)', ...font }} />
         {editError && <div style={{ fontSize: 12, color: '#A32D2D', marginBottom: 8 }}>{editError}</div>}
         <div style={{ display: 'flex', gap: 6 }}>
-          <button onClick={saveEdit} style={{ flex: 1, padding: '7px', borderRadius: 7, border: 'none', background: '#534AB7', color: 'white', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, ...font }}>
+          <button onClick={saveEdit} style={{ flex: 1, padding: '7px', borderRadius: 7, border: 'none', background: 'var(--brand)', color: 'white', fontSize: 13, cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, ...font }}>
             <i className="ti ti-device-floppy" style={{ fontSize: 14 }} /> Guardar
           </button>
           <button onClick={() => setEditing(false)} style={{ padding: '7px 12px', borderRadius: 7, border: '0.5px solid var(--border)', background: 'transparent', fontSize: 13, cursor: 'pointer', color: 'var(--text3)', ...font }}>
@@ -82,7 +82,7 @@ export default function TaskItem({ task, onUpdate, onDelete }: Props) {
         <div style={{ fontSize: 14, fontWeight: 500, color: 'var(--text)', marginBottom: 5 }}>{task.title}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {task.start_time && task.end_time && (
-            <span style={{ fontSize: 11, color: '#534AB7', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+            <span style={{ fontSize: 11, color: 'var(--brand)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
               <i className="ti ti-clock" style={{ fontSize: 11 }} />{task.start_time.slice(0, 5)} – {task.end_time.slice(0, 5)}
             </span>
           )}

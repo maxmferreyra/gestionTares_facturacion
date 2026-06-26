@@ -173,7 +173,7 @@ export default function InvoiceActions({ collaboratorId, currentDate }: Props) {
       <div style={{ display: 'flex', gap: 7, marginBottom: 16, flexWrap: 'wrap' }}>
         <div style={{ background: 'var(--card)', borderRadius: 10, padding: '9px 14px', border: '0.5px solid var(--border)', textAlign: 'center', minWidth: 52 }}>
           <div style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, letterSpacing: '.04em', textTransform: 'uppercase', marginBottom: 2 }}>Total</div>
-          <div style={{ fontSize: 22, fontWeight: 600, color: '#534AB7' }}>{total}</div>
+          <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--brand)' }}>{total}</div>
         </div>
         {SYSTEMS_CONFIG.map(s => (
           <div key={s.key} style={{ background: 'var(--card)', borderRadius: 10, padding: '9px 11px', border: '0.5px solid var(--border)', textAlign: 'center', minWidth: 52 }}>

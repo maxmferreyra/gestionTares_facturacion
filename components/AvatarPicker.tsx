@@ -37,7 +37,7 @@ export default function AvatarPicker({ collaboratorId, current, onSelect, onClos
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 10, marginBottom: 16 }}>
           {AVATARS.map(a => (
             <button key={a} onClick={() => setSelected(a)}
-              style={{ padding: 0, borderRadius: '50%', border: `2.5px solid ${selected === a ? '#534AB7' : 'var(--border)'}`, background: '#ffffff', cursor: 'pointer', aspectRatio: '1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{ padding: 0, borderRadius: '50%', border: `2.5px solid ${selected === a ? 'var(--brand)' : 'var(--border)'}`, background: '#ffffff', cursor: 'pointer', aspectRatio: '1', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <img src={a} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'contain', display: 'block', background: '#ffffff' }} />
             </button>
           ))}
@@ -45,7 +45,7 @@ export default function AvatarPicker({ collaboratorId, current, onSelect, onClos
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={save} disabled={!selected || saving}
-            style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: '#534AB7', color: 'white', fontSize: 13, fontWeight: 600, cursor: selected ? 'pointer' : 'not-allowed', opacity: selected ? 1 : 0.5, ...font }}>
+            style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: 'var(--brand)', color: 'white', fontSize: 13, fontWeight: 600, cursor: selected ? 'pointer' : 'not-allowed', opacity: selected ? 1 : 0.5, ...font }}>
             {saving ? 'Guardando...' : 'Guardar avatar'}
           </button>
           <button onClick={onClose}

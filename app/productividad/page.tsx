@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { calcDuration } from '@/lib/types'
 import { SYSTEMS_CONFIG } from '@/lib/actions-config'
 import { TASK_SYSTEMS } from '@/lib/tasks-config'
+import Sidebar from '@/components/Sidebar'
 
 const font = { fontFamily: 'Montserrat, sans-serif' }
 const mono = { fontFamily: "'JetBrains Mono', monospace" }
@@ -45,12 +46,12 @@ const SIMPLE_MAP: Record<string, string> = {
 const ROW_COLORS: Record<string, { bg: string; color: string }> = {
   ARCA: { bg: '#FBEAF0', color: '#72243E' },
   BRAINWARE: { bg: '#E6F1FB', color: '#185FA5' },
-  COUPA: { bg: '#CECBF6', color: '#3C3489' },
+  COUPA: { bg: 'var(--brand-tint)', color: 'var(--brand-dark)' },
   FRESHDESK: { bg: '#E0F2EF', color: '#0F6E56' },
   ONBASE: { bg: '#FAEEDA', color: '#854F0B' },
   OUTLOOK: { bg: '#E6E9FB', color: '#2A4B9B' },
   SAP: { bg: '#EAF3DE', color: '#3B6D11' },
-  'LEGAL TRACKER': { bg: '#F1EFE8', color: '#534AB7' },
+  'LEGAL TRACKER': { bg: '#F1EFE8', color: 'var(--brand)' },
 }
 
 export default function ProductividadPage() {
@@ -173,31 +174,26 @@ export default function ProductividadPage() {
     return { taskSys, diarioMin, standardMin, touchCount, ritmoRealMin, ritmoStdMin, diffLabel, diffOk }
   })
 
-  const colors = (k: string) => ROW_COLORS[k] || { bg: '#F1EFE8', color: '#5f5e5a' }
+  const colors = (k: string) => ROW_COLORS[k] || { bg: '#F1EFE8', color: 'var(--text2)' }
   const maxBar = Math.max(...rows.map(r => Math.max(r.diarioMin, r.standardMin)), 1)
-  const inputStyle = { padding: '8px 11px', borderRadius: 7, border: '0.5px solid #d3d1c7', fontSize: 13, outline: 'none', background: '#fafaf8', color: '#1a1a18', ...font }
+  const inputStyle = { padding: '8px 11px', borderRadius: 7, border: '0.5px solid var(--border)', fontSize: 13, outline: 'none', background: 'var(--input-bg)', color: 'var(--text)', ...font }
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', justifyContent: 'center', padding: '1.5rem 1rem', background: '#f5f4f0', ...font }}>
-      <div style={{ width: '80%', maxWidth: 720 }}>
+    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', gap: 22, padding: 22, background: 'var(--bg)', ...font }}>
+      <Sidebar collaborator={collaborator} activeKey="/productividad" onNavigate={() => router.push('/dashboard')} />
+      <div style={{ flex: 1, minWidth: 0, maxWidth: 800 }}>
 
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.1rem' }}>
-          <div>
-            <h1 style={{ fontSize: 17, fontWeight: 600, color: '#1a1a18' }}>Productividad</h1>
-            <div style={{ fontSize: 11, color: '#888780', fontWeight: 300, marginTop: 2 }}>Comparación: horas en Diario vs. tiempo estimado por toques</div>
-          </div>
-          <button onClick={() => router.push('/dashboard')}
-            style={{ border: 'none', background: 'transparent', fontSize: 11, color: '#888780', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, padding: '4px 0', ...font }}>
-            <i className="ti ti-arrow-left" style={{ fontSize: 13 }} /> Volver a Milo
-          </button>
+        <div style={{ marginBottom: '1.1rem' }}>
+          <h1 style={{ fontSize: 19, fontWeight: 600, color: 'var(--text)' }}>Productividad</h1>
+          <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 300, marginTop: 2 }}>Comparación: horas en Diario vs. tiempo estimado por toques</div>
         </div>
 
         {/* Period pills */}
-        <div style={{ display: 'flex', background: '#fff', borderRadius: 10, padding: 3, marginBottom: 8, border: '0.5px solid #e5e3db', gap: 2 }}>
+        <div style={{ display: 'flex', background: 'var(--card)', borderRadius: 10, padding: 3, marginBottom: 8, border: '0.5px solid var(--border)', gap: 2 }}>
           {(['day', 'week', 'month'] as Period[]).map(p => (
             <button key={p} onClick={() => setPeriod(p)}
-              style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 500, background: period === p ? '#534AB7' : 'transparent', color: period === p ? '#fff' : '#888780', ...font }}>
+              style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 500, background: period === p ? 'var(--brand)' : 'transparent', color: period === p ? 'var(--card)' : 'var(--text3)', ...font }}>
               {p === 'day' ? 'Hoy' : p === 'week' ? 'Semana' : 'Mes'}
             </button>
           ))}
@@ -211,34 +207,34 @@ export default function ProductividadPage() {
         </select>
 
         {/* Config panel */}
-        <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #e5e3db', marginBottom: 16, overflow: 'hidden' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 12, border: '0.5px solid var(--border)', marginBottom: 16, overflow: 'hidden' }}>
           <button onClick={() => setConfigOpen(!configOpen)}
             style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 14px', border: 'none', background: 'transparent', cursor: 'pointer', ...font }}>
-            <span style={{ fontSize: 12, fontWeight: 600, color: '#534AB7', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 6 }}>
               <i className="ti ti-adjustments" style={{ fontSize: 14 }} /> Configurar tiempos estándar
             </span>
-            <i className={`ti ${configOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ fontSize: 15, color: '#888780' }} />
+            <i className={`ti ${configOpen ? 'ti-chevron-up' : 'ti-chevron-down'}`} style={{ fontSize: 15, color: 'var(--text3)' }} />
           </button>
           {configOpen && (
-            <div style={{ padding: '0 14px 14px', borderTop: '0.5px solid #e5e3db' }}>
+            <div style={{ padding: '0 14px 14px', borderTop: '0.5px solid var(--border)' }}>
               {SYSTEMS_CONFIG.map(sys => (
                 <div key={sys.key}>
-                  <div style={{ fontSize: 10, fontWeight: 600, color: '#888780', textTransform: 'uppercase', letterSpacing: '.05em', margin: '12px 0 6px' }}>{sys.label}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--text3)', textTransform: 'uppercase', letterSpacing: '.05em', margin: '12px 0 6px' }}>{sys.label}</div>
                   {sys.actions.map(act => {
                     const k = `${sys.key}__${act.key}`
                     return (
                       <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
-                        <span style={{ flex: 1, fontSize: 12, color: '#1a1a18' }}>{act.label}</span>
+                        <span style={{ flex: 1, fontSize: 12, color: 'var(--text)' }}>{act.label}</span>
                         <input type="text" value={editValues[k] ?? ''} onChange={e => setEditValues(prev => ({ ...prev, [k]: e.target.value.replace(/\D/g, '') }))}
-                          style={{ width: 64, padding: '5px 8px', borderRadius: 6, border: '0.5px solid #d3d1c7', fontSize: 12, textAlign: 'center', ...mono }} />
-                        <span style={{ fontSize: 11, color: '#888780' }}>seg</span>
+                          style={{ width: 64, padding: '5px 8px', borderRadius: 6, border: '0.5px solid var(--border)', fontSize: 12, textAlign: 'center', ...mono }} />
+                        <span style={{ fontSize: 11, color: 'var(--text3)' }}>seg</span>
                       </div>
                     )
                   })}
                 </div>
               ))}
               <button onClick={saveConfig} disabled={savingConfig}
-                style={{ marginTop: 10, padding: '8px 14px', borderRadius: 8, border: 'none', background: '#534AB7', color: '#fff', fontSize: 12, fontWeight: 600, cursor: savingConfig ? 'not-allowed' : 'pointer', opacity: savingConfig ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
+                style={{ marginTop: 10, padding: '8px 14px', borderRadius: 8, border: 'none', background: 'var(--brand)', color: 'var(--card)', fontSize: 12, fontWeight: 600, cursor: savingConfig ? 'not-allowed' : 'pointer', opacity: savingConfig ? 0.7 : 1, display: 'flex', alignItems: 'center', gap: 5, ...font }}>
                 <i className="ti ti-check" style={{ fontSize: 13 }} /> {savingConfig ? 'Guardando...' : 'Guardar tiempos'}
               </button>
             </div>
@@ -246,25 +242,25 @@ export default function ProductividadPage() {
         </div>
 
         {/* Legend */}
-        <div style={{ display: 'flex', gap: 16, padding: '2px 2px 10px', fontSize: 11, color: '#5f5e5a' }}>
+        <div style={{ display: 'flex', gap: 16, padding: '2px 2px 10px', fontSize: 11, color: 'var(--text2)' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 9, height: 9, borderRadius: '50%', background: '#185FA5', display: 'inline-block' }} /> Diario (real)</span>
           <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}><span style={{ width: 9, height: 9, borderRadius: '50%', background: '#3B6D11', display: 'inline-block' }} /> Toques × estándar</span>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#888780' }}>
+          <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text3)' }}>
             <i className="ti ti-loader-2" style={{ fontSize: 28, display: 'block', marginBottom: 8 }} /> Cargando...
           </div>
         ) : (
           rows.map(r => {
             const rc = colors(r.taskSys)
             return (
-              <div key={r.taskSys} style={{ background: '#fff', border: '0.5px solid #e5e3db', borderRadius: 12, padding: '13px 15px', marginBottom: 10 }}>
+              <div key={r.taskSys} style={{ background: 'var(--card)', border: '0.5px solid var(--border)', borderRadius: 12, padding: '13px 15px', marginBottom: 10 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 10 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 20, background: rc.bg, color: rc.color }}>{r.taskSys}</span>
                   <span style={{ flex: 1 }} />
                   {r.diffLabel && (
-                    <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: r.diffOk ? '#EAF3DE' : '#FCEBEB', color: r.diffOk ? '#3B6D11' : '#A32D2D' }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: r.diffOk ? '#EAF3DE' : 'var(--error-bg)', color: r.diffOk ? '#3B6D11' : 'var(--error)' }}>
                       {r.diffLabel}
                     </span>
                   )}
@@ -280,8 +276,8 @@ export default function ProductividadPage() {
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#3B6D11', ...mono }}>{formatHM(r.standardMin)}</div>
                   </div>
                   <div style={{ flex: 1, textAlign: 'center', padding: '7px 4px', borderRadius: 8, background: '#F1EFE8' }}>
-                    <div style={{ fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.03em', color: '#5f5e5a', marginBottom: 3 }}>Toques</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18', ...mono }}>{r.touchCount}</div>
+                    <div style={{ fontSize: 9, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '.03em', color: 'var(--text2)', marginBottom: 3 }}>Toques</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', ...mono }}>{r.touchCount}</div>
                   </div>
                 </div>
 
@@ -291,10 +287,10 @@ export default function ProductividadPage() {
                 </div>
 
                 {r.ritmoRealMin !== null && (
-                  <div style={{ fontSize: 11, color: '#888780', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 5 }}>
                     <i className="ti ti-gauge" style={{ fontSize: 13 }} />
-                    Ritmo real: <strong style={{ color: '#1a1a18' }}>{r.ritmoRealMin.toFixed(1)} min/toque</strong>
-                    {' '}vs. estándar configurado: <strong style={{ color: '#1a1a18' }}>{r.ritmoStdMin!.toFixed(1)} min/toque</strong>
+                    Ritmo real: <strong style={{ color: 'var(--text)' }}>{r.ritmoRealMin.toFixed(1)} min/toque</strong>
+                    {' '}vs. estándar configurado: <strong style={{ color: 'var(--text)' }}>{r.ritmoStdMin!.toFixed(1)} min/toque</strong>
                   </div>
                 )}
               </div>
@@ -302,7 +298,7 @@ export default function ProductividadPage() {
           })
         )}
 
-        <div style={{ fontSize: 10, color: '#b4b2a9', marginTop: 14, lineHeight: 1.6, display: 'flex', gap: 6 }}>
+        <div style={{ fontSize: 10, color: 'var(--text4)', marginTop: 14, lineHeight: 1.6, display: 'flex', gap: 6 }}>
           <i className="ti ti-info-circle" style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }} />
           <span>
             <strong>Diario</strong>: horas reales bloqueadas en la pestaña Diario con ese sistema tildado.{' '}

@@ -69,8 +69,8 @@ export default function AddTaskForm({ onAdd, onCancel, defaultStartTime }: Props
   const selectStyle = { padding: '7px 9px', borderRadius: 8, border: '0.5px solid var(--border)', fontSize: 14, outline: 'none', background: 'var(--input-bg)', color: 'var(--text)', cursor: 'pointer', ...font }
 
   return (
-    <div style={{ background: 'var(--card)', borderRadius: 12, border: '0.5px solid #AFA9EC', padding: '16px', marginBottom: 8, ...font }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: '#534AB7', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+    <div style={{ background: 'var(--card)', borderRadius: 12, border: '0.5px solid var(--brand-soft)', padding: '16px', marginBottom: 8, ...font }}>
+      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--brand)', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
         <i className="ti ti-plus" style={{ fontSize: 15 }} /> Nueva tarea
       </div>
 
@@ -156,7 +156,7 @@ export default function AddTaskForm({ onAdd, onCancel, defaultStartTime }: Props
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {TASK_SYSTEMS.map(s => (
               <button key={s} type="button" onClick={() => toggleSystem(s)}
-                style={{ padding: '5px 11px', borderRadius: 20, border: `1.5px solid ${selectedSystems.includes(s) ? '#534AB7' : 'var(--border)'}`, background: selectedSystems.includes(s) ? '#CECBF6' : 'var(--card)', color: selectedSystems.includes(s) ? '#3C3489' : 'var(--text2)', fontSize: 12, fontWeight: 500, cursor: 'pointer', ...font }}>
+                style={{ padding: '5px 11px', borderRadius: 20, border: `1.5px solid ${selectedSystems.includes(s) ? 'var(--brand)' : 'var(--border)'}`, background: selectedSystems.includes(s) ? 'var(--brand-tint)' : 'var(--card)', color: selectedSystems.includes(s) ? 'var(--brand-dark)' : 'var(--text2)', fontSize: 12, fontWeight: 500, cursor: 'pointer', ...font }}>
                 {s}
               </button>
             ))}
@@ -195,7 +195,7 @@ export default function AddTaskForm({ onAdd, onCancel, defaultStartTime }: Props
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button type="submit"
-            style={{ flex: 1, padding: '9px', borderRadius: 9, border: 'none', background: '#534AB7', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...font }}>
+            style={{ flex: 1, padding: '9px', borderRadius: 9, border: 'none', background: 'var(--brand)', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...font }}>
             <i className="ti ti-check" style={{ fontSize: 15 }} /> Guardar tarea
           </button>
           <button type="button" onClick={onCancel}

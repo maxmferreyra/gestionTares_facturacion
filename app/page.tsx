@@ -57,17 +57,18 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem' }}>
+    <div style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1rem', background: 'linear-gradient(160deg, var(--brand-dark2) 0%, var(--brand-darkest) 100%)' }}>
       <div style={{ width: '100%', maxWidth: 320, ...font }}>
 
-        <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
-          <img src="/logo-milo.png" alt="Milo" style={{ width: 170, height: 170, objectFit: 'contain', margin: '0 auto' }} />
-          <p style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 300, marginTop: -8 }}>
+        <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+          <img src="/logo-milo.png" alt="Milo" style={{ width: 110, height: 110, objectFit: 'contain', margin: '0 auto' }} />
+          <div style={{ fontSize: 22, fontWeight: 700, color: '#fff', letterSpacing: '0.3px', marginTop: 6 }}>Milo</div>
+          <p style={{ fontSize: 12, color: 'var(--brand-soft)', fontWeight: 400, marginTop: 4 }}>
             {mode === 'reset' ? 'Resetear PIN' : 'Ingresá con tu nombre y PIN'}
           </p>
         </div>
 
-        <div style={{ background: 'var(--card)', borderRadius: 14, border: '0.5px solid var(--border)', padding: '1.25rem' }}>
+        <div style={{ background: 'var(--card)', borderRadius: 16, padding: '1.4rem', boxShadow: '0 12px 32px rgba(5,31,32,0.35)' }}>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: '0.9rem' }}>
@@ -100,18 +101,18 @@ export default function LoginPage() {
             )}
 
             {error && (
-              <div style={{ background: '#FCEBEB', color: '#A32D2D', fontSize: 12, padding: '7px 11px', borderRadius: 7, marginBottom: '0.9rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ background: 'var(--error-bg)', color: 'var(--error)', fontSize: 12, padding: '7px 11px', borderRadius: 7, marginBottom: '0.9rem', display: 'flex', alignItems: 'center', gap: 5 }}>
                 <i className="ti ti-alert-circle" style={{ fontSize: 14 }} /> {error}
               </div>
             )}
             {success && (
-              <div style={{ background: '#EAF3DE', color: '#3B6D11', fontSize: 12, padding: '7px 11px', borderRadius: 7, marginBottom: '0.9rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ background: 'var(--success-bg)', color: 'var(--success)', fontSize: 12, padding: '7px 11px', borderRadius: 7, marginBottom: '0.9rem', display: 'flex', alignItems: 'center', gap: 5 }}>
                 <i className="ti ti-circle-check" style={{ fontSize: 14 }} /> {success}
               </div>
             )}
 
             <button type="submit" disabled={loading}
-              style={{ width: '100%', padding: '10px', borderRadius: 9, border: 'none', background: mode === 'reset' ? '#BA7517' : '#534AB7', color: 'white', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, ...font, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+              style={{ width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: mode === 'reset' ? 'var(--warning)' : 'var(--brand)', color: 'white', fontSize: 13, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, ...font, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
               {loading ? <><i className="ti ti-loader-2" style={{ fontSize: 15 }} /> Cargando...</>
                 : mode === 'login' ? <><i className="ti ti-login" style={{ fontSize: 15 }} /> Ingresar</>
                 : <><i className="ti ti-key" style={{ fontSize: 15 }} /> Resetear PIN</>}

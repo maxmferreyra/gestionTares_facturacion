@@ -117,14 +117,14 @@ export default function UserManagement({ currentUserId }: Props) {
           <i className="ti ti-users-group" style={{ fontSize: 14 }} /> {users.length} usuario{users.length !== 1 ? 's' : ''}
         </div>
         <button onClick={() => setShowAdd(!showAdd)}
-          style={{ padding: '7px 13px', borderRadius: 8, border: 'none', background: showAdd ? 'var(--border)' : '#534AB7', color: showAdd ? 'var(--text)' : 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, ...font }}>
+          style={{ padding: '7px 13px', borderRadius: 8, border: 'none', background: showAdd ? 'var(--border)' : 'var(--brand)', color: showAdd ? 'var(--text)' : 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, ...font }}>
           <i className={`ti ${showAdd ? 'ti-x' : 'ti-user-plus'}`} style={{ fontSize: 14 }} /> {showAdd ? 'Cancelar' : 'Agregar usuario'}
         </button>
       </div>
 
       {/* Add user form */}
       {showAdd && (
-        <form onSubmit={addUser} style={{ background: 'var(--card)', borderRadius: 12, border: '0.5px solid #AFA9EC', padding: '14px', marginBottom: 16 }}>
+        <form onSubmit={addUser} style={{ background: 'var(--card)', borderRadius: 12, border: '0.5px solid var(--brand-soft)', padding: '14px', marginBottom: 16 }}>
           <div style={{ marginBottom: 10 }}>
             <label style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 4 }}>Nombre completo</label>
             <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ej: Martín García" style={inputStyle} />
@@ -145,7 +145,7 @@ export default function UserManagement({ currentUserId }: Props) {
           </div>
           {addError && <div style={{ fontSize: 12, color: '#A32D2D', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}><i className="ti ti-alert-circle" style={{ fontSize: 14 }} />{addError}</div>}
           <button type="submit" disabled={adding}
-            style={{ width: '100%', padding: '9px', borderRadius: 8, border: 'none', background: '#534AB7', color: 'white', fontSize: 13, fontWeight: 600, cursor: adding ? 'not-allowed' : 'pointer', opacity: adding ? 0.7 : 1, ...font }}>
+            style={{ width: '100%', padding: '9px', borderRadius: 8, border: 'none', background: 'var(--brand)', color: 'white', fontSize: 13, fontWeight: 600, cursor: adding ? 'not-allowed' : 'pointer', opacity: adding ? 0.7 : 1, ...font }}>
             {adding ? 'Creando...' : 'Crear usuario'}
           </button>
         </form>
@@ -163,7 +163,7 @@ export default function UserManagement({ currentUserId }: Props) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               {u.avatar
                 ? <img src={u.avatar} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', background: '#fff', flexShrink: 0 }} />
-                : <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#CECBF6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#3C3489', flexShrink: 0 }}>{initials}</div>}
+                : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--brand-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: 'var(--brand-dark)', flexShrink: 0 }}>{initials}</div>}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)' }}>{u.name}</span>
@@ -189,7 +189,7 @@ export default function UserManagement({ currentUserId }: Props) {
               </button>
 
               <button onClick={() => { setPinFor(isPinOpen ? null : u.id); setPinValue(''); setPinError('') }}
-                style={{ padding: '5px 10px', borderRadius: 7, border: '0.5px solid var(--border)', background: isPinOpen ? '#CECBF6' : 'transparent', fontSize: 11, color: isPinOpen ? '#3C3489' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, ...font }}>
+                style={{ padding: '5px 10px', borderRadius: 7, border: '0.5px solid var(--border)', background: isPinOpen ? 'var(--brand-tint)' : 'transparent', fontSize: 11, color: isPinOpen ? 'var(--brand-dark)' : 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, ...font }}>
                 <i className="ti ti-key" style={{ fontSize: 12 }} /> Cambiar PIN
               </button>
 
@@ -225,9 +225,9 @@ export default function UserManagement({ currentUserId }: Props) {
               <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
                 <input value={pinValue} onChange={e => setPinValue(e.target.value.replace(/\D/g, '').slice(0, 8))}
                   inputMode="numeric" placeholder="Nuevo PIN" autoFocus
-                  style={{ flex: 1, padding: '7px 11px', borderRadius: 7, border: '0.5px solid #534AB7', fontSize: 13, outline: 'none', background: 'var(--input-bg)', color: 'var(--text)', ...font }} />
+                  style={{ flex: 1, padding: '7px 11px', borderRadius: 7, border: '0.5px solid var(--brand)', fontSize: 13, outline: 'none', background: 'var(--input-bg)', color: 'var(--text)', ...font }} />
                 <button onClick={() => confirmPin(u.id)} disabled={isBusy}
-                  style={{ padding: '7px 13px', borderRadius: 7, border: 'none', background: '#534AB7', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', ...font }}>
+                  style={{ padding: '7px 13px', borderRadius: 7, border: 'none', background: 'var(--brand)', color: 'white', fontSize: 12, fontWeight: 600, cursor: 'pointer', ...font }}>
                   Guardar
                 </button>
               </div>

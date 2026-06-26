@@ -80,18 +80,18 @@ export default function WeeklySummary({ collaboratorId, collaboratorName, onSele
   const statusConfig = {
     complete:   { label: 'Completo',   color: '#0F6E56', bg: '#E0F2EF', icon: 'ti-circle-check' },
     partial:    { label: 'Parcial',    color: '#854F0B', bg: '#FAEEDA', icon: 'ti-circle-half-2' },
-    incomplete: { label: 'Incompleto', color: '#888780', bg: '#F1EFE8', icon: 'ti-circle-dashed' },
+    incomplete: { label: 'Incompleto', color: 'var(--text3)', bg: '#F1EFE8', icon: 'ti-circle-dashed' },
   }
 
   return (
     <div style={font}>
       {/* Week nav */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--card)', borderRadius: 10, padding: '10px 14px', marginBottom: '1rem', border: '0.5px solid var(--border)' }}>
-        <button onClick={() => setWeekStart(d => offsetDate(d, -7))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#534AB7', padding: '4px 8px', display: 'flex', alignItems: 'center' }}>
+        <button onClick={() => setWeekStart(d => offsetDate(d, -7))} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--brand)', padding: '4px 8px', display: 'flex', alignItems: 'center' }}>
           <i className="ti ti-chevron-left" style={{ fontSize: 18 }} />
         </button>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{weekLabel} – {weekEndLabel}</div>
-        <button onClick={() => { const n = offsetDate(weekStart, 7); if (n <= today) setWeekStart(n) }} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: weekStart >= getMonday(new Date()) ? 'var(--border)' : '#534AB7', padding: '4px 8px', display: 'flex', alignItems: 'center' }}>
+        <button onClick={() => { const n = offsetDate(weekStart, 7); if (n <= today) setWeekStart(n) }} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: weekStart >= getMonday(new Date()) ? 'var(--border)' : 'var(--brand)', padding: '4px 8px', display: 'flex', alignItems: 'center' }}>
           <i className="ti ti-chevron-right" style={{ fontSize: 18 }} />
         </button>
       </div>
@@ -102,13 +102,13 @@ export default function WeeklySummary({ collaboratorId, collaboratorName, onSele
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontWeight: 500 }}>
             <i className="ti ti-list" style={{ fontSize: 12 }} /> Tareas
           </div>
-          <div style={{ fontSize: 22, fontWeight: 600, color: '#1a1a18' }}>{totalTasks}</div>
+          <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--text)' }}>{totalTasks}</div>
         </div>
         <div style={{ background: 'var(--card)', borderRadius: 10, padding: '12px 10px', border: '0.5px solid var(--border)', textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontWeight: 500 }}>
             <i className="ti ti-hand-click" style={{ fontSize: 12 }} /> Toques
           </div>
-          <div style={{ fontSize: 22, fontWeight: 600, color: '#534AB7' }}>{totalTouches}</div>
+          <div style={{ fontSize: 22, fontWeight: 600, color: 'var(--brand)' }}>{totalTouches}</div>
         </div>
         <div style={{ background: 'var(--card)', borderRadius: 10, padding: '12px 10px', border: '0.5px solid var(--border)', textAlign: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontWeight: 500 }}>
@@ -124,12 +124,12 @@ export default function WeeklySummary({ collaboratorId, collaboratorName, onSele
         const isToday = d.date === today
         return (
           <button key={d.date} onClick={() => onSelectDay?.(d.date)}
-            style={{ width: '100%', textAlign: 'left', background: 'var(--card)', borderRadius: 10, border: `0.5px solid ${isToday ? '#534AB7' : 'var(--border)'}`, padding: '11px 14px', marginBottom: 8, cursor: onSelectDay ? 'pointer' : 'default', ...font }}>
+            style={{ width: '100%', textAlign: 'left', background: 'var(--card)', borderRadius: 10, border: `0.5px solid ${isToday ? 'var(--brand)' : 'var(--border)'}`, padding: '11px 14px', marginBottom: 8, cursor: onSelectDay ? 'pointer' : 'default', ...font }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{d.label}</span>
                 <span style={{ fontSize: 11, color: 'var(--text4)', fontWeight: 300 }}>{new Date(d.date + 'T12:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}</span>
-                {isToday && <span style={{ fontSize: 9, fontWeight: 600, color: '#534AB7', background: '#CECBF6', padding: '1px 6px', borderRadius: 20 }}>HOY</span>}
+                {isToday && <span style={{ fontSize: 9, fontWeight: 600, color: 'var(--brand)', background: 'var(--brand-tint)', padding: '1px 6px', borderRadius: 20 }}>HOY</span>}
               </div>
               <span style={{ fontSize: 10, fontWeight: 600, color: sc.color, background: sc.bg, padding: '3px 9px', borderRadius: 20, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <i className={`ti ${sc.icon}`} style={{ fontSize: 12 }} />{sc.label}

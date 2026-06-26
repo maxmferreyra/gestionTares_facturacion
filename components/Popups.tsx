@@ -41,9 +41,9 @@ export default function Popups({ userName }: Props) {
             <div style={{ fontSize: 40, marginBottom: 12 }}>👋</div>
             <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', marginBottom: 8 }}>¡Hola, {userName.split(' ')[0]}!</h2>
             <p style={{ fontSize: 14, color: 'var(--text3)', fontWeight: 300, marginBottom: 20, lineHeight: 1.5 }}>
-              No olvides iniciar <strong style={{ color: '#534AB7', fontWeight: 600 }}>Lilo</strong> antes de comenzar.
+              No olvides iniciar <strong style={{ color: 'var(--brand)', fontWeight: 600 }}>Lilo</strong> antes de comenzar.
             </p>
-            <button onClick={() => setShowWelcome(false)} style={{ width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: '#534AB7', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', ...font }}>
+            <button onClick={() => setShowWelcome(false)} style={{ width: '100%', padding: '10px', borderRadius: 10, border: 'none', background: 'var(--brand)', color: 'white', fontSize: 14, fontWeight: 600, cursor: 'pointer', ...font }}>
               Entendido ✓
             </button>
           </div>
