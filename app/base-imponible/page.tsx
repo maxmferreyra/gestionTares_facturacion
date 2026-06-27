@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { localToday, localOffsetDate } from '@/lib/types'
 import Sidebar from '@/components/Sidebar'
+import MobileNav from '@/components/MobileNav'
 
 const font = { fontFamily: 'Montserrat, sans-serif' }
 const mono = { fontFamily: "'JetBrains Mono', monospace" }
@@ -132,6 +133,8 @@ export default function BaseImponiblePage() {
   // Confirmación de borrado en Corregidas (2 pasos)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
+  function logout() { localStorage.removeItem('collaborator'); router.push('/') }
+
   function resetInactivity() {
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
     inactivityTimer.current = setTimeout(() => {
@@ -256,9 +259,10 @@ export default function BaseImponiblePage() {
   const inputStyle = { width: '100%', padding: '8px 11px', borderRadius: 7, border: '0.5px solid var(--border)', fontSize: 13, outline: 'none', background: 'var(--input-bg)', color: 'var(--text)', ...font }
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', gap: 22, padding: 22, background: 'var(--bg)', ...font }}>
-      <Sidebar collaborator={collaborator} activeKey="/base-imponible" onNavigate={() => router.push('/dashboard')} />
-      <div style={{ flex: 1, minWidth: 0, maxWidth: 760 }}>
+    <div className="flex flex-col lg:flex-row" style={{ width: '100%', minHeight: '100vh', gap: 22, padding: 22, background: 'var(--bg)', ...font }}>
+      <Sidebar collaborator={collaborator} activeKey="/base-imponible" onNavigate={(key) => router.push(`/dashboard?view=${key}`)} />
+      <MobileNav collaborator={collaborator} activeKey="/base-imponible" onNavigate={(key) => router.push(`/dashboard?view=${key}`)} onLogout={logout} />
+      <div className="pt-14 pb-20 lg:pt-0 lg:pb-0" style={{ flex: 1, minWidth: 0, maxWidth: 760 }}>
 
         {/* Header */}
         <div style={{ marginBottom: '1.1rem' }}>

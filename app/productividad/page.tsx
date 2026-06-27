@@ -5,6 +5,7 @@ import { calcDuration } from '@/lib/types'
 import { SYSTEMS_CONFIG } from '@/lib/actions-config'
 import { TASK_SYSTEMS } from '@/lib/tasks-config'
 import Sidebar from '@/components/Sidebar'
+import MobileNav from '@/components/MobileNav'
 
 const font = { fontFamily: 'Montserrat, sans-serif' }
 const mono = { fontFamily: "'JetBrains Mono', monospace" }
@@ -68,6 +69,8 @@ export default function ProductividadPage() {
   const [editValues, setEditValues] = useState<Record<string, string>>({})
   const [savingConfig, setSavingConfig] = useState(false)
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function logout() { localStorage.removeItem('collaborator'); router.push('/') }
 
   function resetInactivity() {
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
@@ -179,9 +182,10 @@ export default function ProductividadPage() {
   const inputStyle = { padding: '8px 11px', borderRadius: 7, border: '0.5px solid var(--border)', fontSize: 13, outline: 'none', background: 'var(--input-bg)', color: 'var(--text)', ...font }
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', gap: 22, padding: 22, background: 'var(--bg)', ...font }}>
-      <Sidebar collaborator={collaborator} activeKey="/productividad" onNavigate={() => router.push('/dashboard')} />
-      <div style={{ flex: 1, minWidth: 0, maxWidth: 800 }}>
+    <div className="flex flex-col lg:flex-row" style={{ width: '100%', minHeight: '100vh', gap: 22, padding: 22, background: 'var(--bg)', ...font }}>
+      <Sidebar collaborator={collaborator} activeKey="/productividad" onNavigate={(key) => router.push(`/dashboard?view=${key}`)} />
+      <MobileNav collaborator={collaborator} activeKey="/productividad" onNavigate={(key) => router.push(`/dashboard?view=${key}`)} onLogout={logout} />
+      <div className="pt-14 pb-20 lg:pt-0 lg:pb-0" style={{ flex: 1, minWidth: 0, maxWidth: 800 }}>
 
         {/* Header */}
         <div style={{ marginBottom: '1.1rem' }}>

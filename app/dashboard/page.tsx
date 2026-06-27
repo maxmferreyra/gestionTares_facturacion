@@ -1,6 +1,6 @@
 'use client'
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { Task } from '@/lib/types'
 import { calcDuration, localToday, localOffsetDate } from '@/lib/types'
 import TaskItem from '@/components/TaskItem'
@@ -15,6 +15,7 @@ import InicioSummary from '@/components/InicioSummary'
 import Popups from '@/components/Popups'
 import AvatarPicker from '@/components/AvatarPicker'
 import Sidebar from '@/components/Sidebar'
+import MobileNav from '@/components/MobileNav'
 
 type View = 'inicio' | 'daily' | 'weekly' | 'invoices' | 'help' | 'supervisor' | 'users'
 
@@ -42,13 +43,19 @@ function getMotivation(workedMin: number): { msg: string; color: string; bg: str
 }
 function timeToMin(t: string) { const [h, m] = t.split(':').map(Number); return h * 60 + m }
 
-export default function Dashboard() {
+function DashboardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [collaborator, setCollaborator] = useState<{ id: string; name: string; role: string; avatar?: string | null } | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
-  const [view, setView] = useState<View>('inicio')
+  const [view, setView] = useState<View>(() => {
+    const v = searchParams.get('view')
+    const validViews: View[] = ['inicio', 'daily', 'weekly', 'invoices', 'help', 'supervisor', 'users']
+    return (v && validViews.includes(v as View)) ? (v as View) : 'inicio'
+  })
   const [showAddForm, setShowAddForm] = useState(false)
   const [showAvatar, setShowAvatar] = useState(false)
+  const [calendarVersion, setCalendarVersion] = useState(0)
   const [loading, setLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState(localToday())
   const today = localToday()
@@ -152,7 +159,7 @@ export default function Dashboard() {
   if (!collaborator) return null
 
   return (
-    <div style={{ width: '100%', minHeight: '100vh', display: 'flex', gap: 22, padding: 22, background: 'var(--bg)', ...font }}>
+    <div className="flex flex-col lg:flex-row" style={{ width: '100%', minHeight: '100vh', gap: 22, padding: 22, background: 'var(--bg)', ...font }}>
 
       <Sidebar
         collaborator={collaborator}
@@ -160,11 +167,19 @@ export default function Dashboard() {
         onNavigate={(key) => setView(key as View)}
         onAvatarClick={() => setShowAvatar(true)}
       />
+      <MobileNav
+        collaborator={collaborator}
+        activeKey={view}
+        onNavigate={(key) => setView(key as View)}
+        onAvatarClick={() => setShowAvatar(true)}
+        onLogout={logout}
+        onExportExcel={handleExport}
+      />
 
       <Popups userName={collaborator.name} />
       {showAvatar && <AvatarPicker collaboratorId={collaborator.id} current={collaborator.avatar || null} onSelect={onAvatarSelected} onClose={() => setShowAvatar(false)} />}
 
-      <div style={{ flex: 1, minWidth: 0, maxWidth: 880 }}>
+      <div className="pt-14 pb-20 lg:pt-0 lg:pb-0" style={{ flex: 1, minWidth: 0, maxWidth: 880 }}>
 
         {/* Topbar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: 10 }}>
@@ -192,11 +207,11 @@ export default function Dashboard() {
             <InicioSummary
               myWorkedLabel={workedLabel || '0h'}
               myUncoveredLabel={uncoveredMin === 0 ? '0h' : uncoveredLabel}
-              myTaskCount={tasks.length}
-              collaboratorId={collaborator.id}
+              collaborator={collaborator}
+              onEventAdded={() => setCalendarVersion(v => v + 1)}
             />
             <div style={{ flex: '1.2 1 340px', minWidth: 0 }}>
-              <InicioCalendar collaborator={collaborator} />
+              <InicioCalendar collaborator={collaborator} refreshKey={calendarVersion} />
             </div>
           </div>
         )}
@@ -286,5 +301,13 @@ export default function Dashboard() {
         {view === 'users' && isSupervisor && <UserManagement currentUserId={collaborator.id} />}
       </div>
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={null}>
+      <DashboardContent />
+    </Suspense>
   )
 }

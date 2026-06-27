@@ -27,7 +27,7 @@ interface Props {
 
 const COLLAB_ITEMS: NavItem[] = [
   { key: 'inicio', label: 'Inicio', icon: 'ti-home-2' },
-  { key: 'daily', label: 'Tareas', icon: 'ti-calendar-day' },
+  { key: 'daily', label: 'Tareas', icon: 'ti-clipboard-list' },
   { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },
   { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
   { key: 'base-imponible', label: 'Base imponible', icon: 'ti-receipt-tax', external: '/base-imponible' },
@@ -55,9 +55,9 @@ export default function Sidebar({ collaborator, activeKey, onNavigate, onAvatarC
   }
 
   return (
-    <div style={{
+    <div className="hidden lg:flex" style={{
       width: 222, flexShrink: 0, background: 'linear-gradient(165deg, var(--brand-dark) 0%, var(--brand-darkest) 100%)',
-      borderRadius: 22, padding: '22px 16px', display: 'flex', flexDirection: 'column', color: '#fff',
+      borderRadius: 22, padding: '22px 16px', flexDirection: 'column', color: '#fff',
       position: 'relative', overflow: 'hidden', minHeight: 'calc(100vh - 44px)', ...font,
     }}>
       {/* Brand */}
