@@ -16,6 +16,7 @@ interface NavItem {
   label: string
   icon: string
   external?: string
+  flag?: string
 }
 
 interface Props {
@@ -32,8 +33,8 @@ const PRIMARY_ITEMS: NavItem[] = [
   { key: 'inicio', label: 'Inicio', icon: 'ti-home-2' },
   { key: 'daily', label: 'Tareas', icon: 'ti-clipboard-list' },
   { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
-  { key: 'base-imponible', label: 'B. imp. 🇦🇷', icon: 'ti-receipt-tax', external: '/base-imponible' },
-  { key: 'boleto-brasil', label: 'Boleto 🇧🇷', icon: 'ti-barcode', external: '/boleto-brasil' },
+  { key: 'base-imponible', label: 'B. imp.', flag: 'ar', icon: 'ti-receipt-tax', external: '/base-imponible' },
+  { key: 'boleto-brasil', label: 'Boleto', flag: 'br', icon: 'ti-barcode', external: '/boleto-brasil' },
 ]
 const MORE_ITEMS: NavItem[] = [
   { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },
@@ -126,7 +127,10 @@ export default function MobileNav({ collaborator, activeKey, onNavigate, onAvata
         {PRIMARY_ITEMS.map(item => (
           <button key={item.key} onClick={() => handleClick(item)}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, border: 'none', background: 'transparent', cursor: 'pointer', color: isActive(item) ? 'var(--brand)' : 'var(--text4)', padding: '4px 0', ...font }}>
-            <i className={`ti ${item.icon}`} style={{ fontSize: 19 }} />
+            <div style={{ position: 'relative', display: 'inline-flex' }}>
+              <i className={`ti ${item.icon}`} style={{ fontSize: 19 }} />
+              {item.flag && <img src={`https://flagcdn.com/12x9/${item.flag}.png`} alt={item.flag} style={{ position: 'absolute', bottom: -2, right: -5, width: 12, height: 9, borderRadius: 1 }} />}
+            </div>
             <span style={{ fontSize: 9, fontWeight: isActive(item) ? 600 : 500 }}>{item.label}</span>
           </button>
         ))}

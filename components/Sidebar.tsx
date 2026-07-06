@@ -14,7 +14,8 @@ interface NavItem {
   key: string
   label: string
   icon: string
-  external?: string // si está seteado, navega a esta ruta en vez de cambiar el view interno
+  external?: string
+  flag?: string
 }
 
 interface Props {
@@ -30,8 +31,8 @@ const COLLAB_ITEMS: NavItem[] = [
   { key: 'daily', label: 'Tareas', icon: 'ti-clipboard-list' },
   { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },
   { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
-  { key: 'base-imponible', label: 'Base imponible 🇦🇷', icon: 'ti-receipt-tax', external: '/base-imponible' },
-  { key: 'boleto-brasil', label: 'Boleto 🇧🇷', icon: 'ti-barcode', external: '/boleto-brasil' },
+  { key: 'base-imponible', label: 'Base Imponible', flag: 'AR', icon: 'ti-receipt-tax', external: '/base-imponible' },
+  { key: 'boleto-brasil', label: 'Boleto', flag: 'BR', icon: 'ti-barcode', external: '/boleto-brasil' },
   { key: 'help', label: 'Ayuda', icon: 'ti-help-circle' },
 ]
 const SUPERVISOR_ITEMS: NavItem[] = [
@@ -84,7 +85,9 @@ export default function Sidebar({ collaborator, activeKey, onNavigate, onAvatarC
         {COLLAB_ITEMS.map(item => (
           <button key={item.key} onClick={() => handleClick(item)}
             style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '9px 11px', borderRadius: 10, fontSize: 12.5, fontWeight: 500, border: 'none', textAlign: 'left', cursor: 'pointer', background: isActive(item) ? 'var(--brand)' : 'transparent', color: isActive(item) ? '#fff' : '#cfe3da', ...font }}>
-            <i className={`ti ${item.icon}`} style={{ fontSize: 15, width: 17, textAlign: 'center' }} />{item.label}
+            <i className={`ti ${item.icon}`} style={{ fontSize: 15, width: 17, textAlign: 'center' }} />
+            <span style={{ flex: 1 }}>{item.label}</span>
+            {item.flag && <img src={`https://flagcdn.com/16x12/${item.flag.toLowerCase()}.png`} alt={item.flag} style={{ width: 16, height: 12, borderRadius: 2, flexShrink: 0 }} />}
           </button>
         ))}
 
