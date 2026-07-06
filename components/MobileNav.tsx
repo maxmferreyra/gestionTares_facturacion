@@ -32,7 +32,8 @@ const PRIMARY_ITEMS: NavItem[] = [
   { key: 'inicio', label: 'Inicio', icon: 'ti-home-2' },
   { key: 'daily', label: 'Tareas', icon: 'ti-clipboard-list' },
   { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
-  { key: 'base-imponible', label: 'B. imp.', icon: 'ti-receipt-tax', external: '/base-imponible' },
+  { key: 'base-imponible', label: 'B. imp. 🇦🇷', icon: 'ti-receipt-tax', external: '/base-imponible' },
+  { key: 'boleto-brasil', label: 'Boleto 🇧🇷', icon: 'ti-barcode', external: '/boleto-brasil' },
 ]
 const MORE_ITEMS: NavItem[] = [
   { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },

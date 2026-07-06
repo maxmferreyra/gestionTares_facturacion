@@ -30,7 +30,8 @@ const COLLAB_ITEMS: NavItem[] = [
   { key: 'daily', label: 'Tareas', icon: 'ti-clipboard-list' },
   { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },
   { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
-  { key: 'base-imponible', label: 'Base imponible', icon: 'ti-receipt-tax', external: '/base-imponible' },
+  { key: 'base-imponible', label: 'Base imponible 🇦🇷', icon: 'ti-receipt-tax', external: '/base-imponible' },
+  { key: 'boleto-brasil', label: 'Boleto 🇧🇷', icon: 'ti-barcode', external: '/boleto-brasil' },
   { key: 'help', label: 'Ayuda', icon: 'ti-help-circle' },
 ]
 const SUPERVISOR_ITEMS: NavItem[] = [
