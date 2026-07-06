@@ -71,11 +71,15 @@ export default function BoletoBrasilPage() {
     if (!vendor.trim()) { setFormErr('Ingresá el vendor'); return }
     if (!nf.trim()) { setFormErr('Ingresá el N° de nota fiscal'); return }
     if (!boleto.trim()) { setFormErr('Ingresá el N° de boleto'); return }
+    const boletoCleaned = boleto.trim()
+    const boletoDigits = boletoCleaned.startsWith('*') ? boletoCleaned.slice(1).replace(/\D/g, '') : boletoCleaned.replace(/\D/g, '')
+    if (boletoDigits.length !== 47) { setFormErr(`El boleto debe tener 47 dígitos — tiene ${boletoDigits.length}`); return }
+    const boletoFinal = '*' + boletoDigits
     if (!collab) return
     setSaving(true)
     const res = await fetch('/api/boleto-brasil', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company_code: cc, vendor: vendor.trim(), nf_number: nf.trim(), boleto_number: boleto.trim(), added_by_id: collab.id, added_by_name: collab.name }),
+      body: JSON.stringify({ company_code: cc, vendor: vendor.trim(), nf_number: nf.trim(), boleto_number: boletoFinal, added_by_id: collab.id, added_by_name: collab.name }),
     })
     const data = await res.json()
     setSaving(false)
@@ -173,8 +177,8 @@ export default function BoletoBrasilPage() {
             <input value={nf} onChange={e => setNf(e.target.value)} placeholder="Ej: NF-e 000123456" style={inp} />
           </div>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 3 }}>N° Boleto <span style={{ color: 'var(--text4)', fontSize: 9 }}>pegá con Ctrl+V desde el PDF</span></label>
-            <input value={boleto} onChange={e => setBoleto(e.target.value)} placeholder="00190.00108 03000.100002 00010.166957..." style={{ ...inp, ...mono, fontSize: 11 }} />
+            <label style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 3 }}>N° Boleto <span style={{ color: 'var(--text4)', fontSize: 9 }}>* + 47 dígitos · pegá con Ctrl+V</span></label>
+            <input value={boleto} onChange={e => setBoleto(e.target.value)} placeholder="*00190001083000100002000101669579000053659..." style={{ ...inp, ...mono, fontSize: 11 }} />
           </div>
           {formErr && <div style={{ fontSize: 11, color: 'var(--error)', background: 'var(--error-bg)', padding: '6px 10px', borderRadius: 7, marginBottom: 10 }}>{formErr}</div>}
           <button type="submit" disabled={saving} style={{ width: '100%', padding: '10px', borderRadius: 9, border: 'none', background: 'var(--brand)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1, ...font }}>
