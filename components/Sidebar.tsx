@@ -39,6 +39,7 @@ const SUPERVISOR_ITEMS: NavItem[] = [
   { key: 'supervisor', label: 'Equipo', icon: 'ti-chart-bar' },
   { key: 'productividad', label: 'Productividad', icon: 'ti-gauge', external: '/productividad' },
   { key: 'users', label: 'Usuarios', icon: 'ti-users-group' },
+  { key: 'catalog', label: 'Catálogo de tareas', icon: 'ti-list-check' },
 ]
 
 export default function Sidebar({ collaborator, activeKey, onNavigate, onAvatarClick, teamNames = [] }: Props) {

@@ -1,7 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { HOURS, MINUTES, calcDuration, formatDuration } from '@/lib/types'
-import { TASK_OPTIONS, TASK_SYSTEMS, TASK_TAGS, tagStyleFixed } from '@/lib/tasks-config'
+import { TASK_SYSTEMS, TASK_TAGS, tagStyleFixed } from '@/lib/tasks-config'
 
 interface Props {
   onAdd: (data: { title: string; start_time: string; end_time: string; systems: string[]; tag: string; notes: string }) => void
@@ -29,6 +29,14 @@ export default function AddTaskForm({ onAdd, onCancel, defaultStartTime }: Props
   const [title, setTitle] = useState('')
   const [titleSearch, setTitleSearch] = useState('')
   const [showTaskList, setShowTaskList] = useState(false)
+  const [taskOptions, setTaskOptions] = useState<string[]>([])
+
+  useEffect(() => {
+    fetch('/api/catalog', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(data => { if (Array.isArray(data)) setTaskOptions(data.map((t: { name: string }) => t.name)) })
+      .catch(() => {})
+  }, [])
   const [startH, setStartH] = useState(HOUR_VALUES.includes(suggestedStartH) ? suggestedStartH : '09')
   const [startM, setStartM] = useState(MIN_VALUES.includes(suggestedStartM) ? suggestedStartM : '00')
   const [endH, setEndH] = useState(suggestedEndH)
@@ -44,8 +52,8 @@ export default function AddTaskForm({ onAdd, onCancel, defaultStartTime }: Props
   const durationLabel = duration ? formatDuration(startTime, endTime) : null
 
   const filteredTasks = titleSearch.trim()
-    ? TASK_OPTIONS.filter(t => t.toLowerCase().includes(titleSearch.toLowerCase()))
-    : TASK_OPTIONS
+    ? taskOptions.filter(t => t.toLowerCase().includes(titleSearch.toLowerCase()))
+    : taskOptions
 
   function toggleSystem(name: string) {
     setSelectedSystems(prev => prev.includes(name) ? prev.filter(s => s !== name) : [...prev, name])

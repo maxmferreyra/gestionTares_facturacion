@@ -10,6 +10,7 @@ import InvoiceActions from '@/components/InvoiceActions'
 import HelpSection from '@/components/HelpSection'
 import SupervisorDashboard from '@/components/SupervisorDashboard'
 import UserManagement from '@/components/UserManagement'
+import TaskCatalogManager from '@/components/TaskCatalogManager'
 import InicioCalendar from '@/components/InicioCalendar'
 import InicioSummary from '@/components/InicioSummary'
 import Popups from '@/components/Popups'
@@ -17,7 +18,7 @@ import AvatarPicker from '@/components/AvatarPicker'
 import Sidebar from '@/components/Sidebar'
 import MobileNav from '@/components/MobileNav'
 
-type View = 'inicio' | 'daily' | 'weekly' | 'invoices' | 'help' | 'supervisor' | 'users'
+type View = 'inicio' | 'daily' | 'weekly' | 'invoices' | 'help' | 'supervisor' | 'users' | 'catalog'
 
 const WORK_START = 9 * 60, WORK_END = 18 * 60, WORK_TOTAL = WORK_END - WORK_START
 const INACTIVITY_LIMIT = 8 * 60 * 60 * 1000
@@ -299,6 +300,7 @@ function DashboardContent() {
         {view === 'help' && <HelpSection />}
         {view === 'supervisor' && isSupervisor && <SupervisorDashboard />}
         {view === 'users' && isSupervisor && <UserManagement currentUserId={collaborator.id} />}
+        {view === 'catalog' && isSupervisor && <TaskCatalogManager />}
       </div>
     </div>
   )
