@@ -33,6 +33,7 @@ const COLLAB_ITEMS: NavItem[] = [
   { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
   { key: 'base-imponible', label: 'Base Imponible', flag: 'AR', icon: 'ti-receipt-tax', external: '/base-imponible' },
   { key: 'boleto-brasil', label: 'Boleto', flag: 'BR', icon: 'ti-barcode', external: '/boleto-brasil' },
+  { key: 'particularidades', label: 'Particularidades', icon: 'ti-notes', external: '/particularidades' },
   { key: 'help', label: 'Ayuda', icon: 'ti-help-circle' },
 ]
 const SUPERVISOR_ITEMS: NavItem[] = [

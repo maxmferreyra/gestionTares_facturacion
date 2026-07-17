@@ -14,3 +14,6 @@ create table if not exists boleto_brasil (
 );
 alter table boleto_brasil enable row level security;
 create policy "allow_all_boleto" on boleto_brasil for all using (true);
+
+-- Agregar fecha de vencimiento (ejecutar si la tabla ya existe)
+alter table boleto_brasil add column if not exists due_date date;

@@ -12,7 +12,7 @@ const CC_KEY = 'milo_boleto_cc'
 
 interface Boleto {
   id: string; company_code: string; vendor: string; nf_number: string
-  boleto_number: string; status: 'pending' | 'done'
+  boleto_number: string; due_date: string | null; status: 'pending' | 'done'
   added_by_id: string; added_by_name: string; added_at: string
   loaded_by_id: string | null; loaded_by_name: string | null; loaded_at: string | null
 }
@@ -33,6 +33,7 @@ export default function BoletoBrasilPage() {
   const [vendor, setVendor] = useState('')
   const [nf, setNf] = useState('')
   const [boleto, setBoleto] = useState('')
+  const [dueDate, setDueDate] = useState('')
   const [formErr, setFormErr] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -79,13 +80,13 @@ export default function BoletoBrasilPage() {
     setSaving(true)
     const res = await fetch('/api/boleto-brasil', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ company_code: cc, vendor: vendor.trim(), nf_number: nf.trim(), boleto_number: boletoFinal, added_by_id: collab.id, added_by_name: collab.name }),
+      body: JSON.stringify({ company_code: cc, vendor: vendor.trim(), nf_number: nf.trim(), boleto_number: boletoFinal, due_date: dueDate || null, added_by_id: collab.id, added_by_name: collab.name }),
     })
     const data = await res.json()
     setSaving(false)
     if (!res.ok) { setFormErr(data.error || 'Error al guardar'); return }
     setItems(prev => [data, ...prev])
-    setVendor(''); setNf(''); setBoleto('')
+    setVendor(''); setNf(''); setBoleto(''); setDueDate('')
   }
 
   async function markDone(id: string) {
@@ -176,6 +177,10 @@ export default function BoletoBrasilPage() {
             <label style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 3 }}>N° Nota Fiscal</label>
             <input value={nf} onChange={e => setNf(e.target.value)} placeholder="Ej: NF-e 000123456" style={inp} />
           </div>
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 3 }}>Vencimiento del boleto</label>
+            <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={inp} />
+          </div>
           <div style={{ marginBottom: 12 }}>
             <label style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 3 }}>N° Boleto <span style={{ color: 'var(--text4)', fontSize: 9 }}>* + 47 dígitos · pegá con Ctrl+V</span></label>
             <input value={boleto} onChange={e => setBoleto(e.target.value)} placeholder="*00190001083000100002000101669579000053659..." style={{ ...inp, ...mono, fontSize: 11 }} />
@@ -213,6 +218,11 @@ export default function BoletoBrasilPage() {
                         {!isOwn && <span style={{ fontSize: 9, color: 'var(--text3)', padding: '2px 7px', borderRadius: 20, background: 'var(--hover)' }}>de {it.added_by_name}</span>}
                       </div>
                       <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text)', marginBottom: 3 }}>{it.nf_number}</div>
+                      {it.due_date && (
+                        <div style={{ fontSize: 10, color: 'var(--warning)', fontWeight: 500, marginBottom: 2 }}>
+                          <i className="ti ti-calendar-due" style={{ fontSize: 11 }} /> Vence: {new Date(it.due_date + 'T12:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </div>
+                      )}
                       <div style={{ fontSize: 10, color: 'var(--text4)', ...mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{it.boleto_number}</div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, alignItems: 'center', flexShrink: 0 }}>

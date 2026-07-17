@@ -14,19 +14,22 @@ interface Task {
   systems: string[] | null; tag: string | null; notes: string | null
 }
 
-type Period = 'day' | 'week' | 'month'
+type Period = 'day' | 'week' | 'month' | 'custom'
 
-function getRange(period: Period): { from: string; to: string } {
+function getRange(period: Period, customFrom?: string, customTo?: string): { from: string; to: string } {
   const now = new Date()
   const to = now.toISOString().split('T')[0]
   let from = to
   if (period === 'week') { const d = new Date(now); d.setDate(d.getDate() - 6); from = d.toISOString().split('T')[0] }
   else if (period === 'month') { from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0] }
+  else if (period === 'custom') { from = customFrom || to; return { from, to: customTo || to } }
   return { from, to }
 }
 
 export default function SupervisorDashboard() {
   const [period, setPeriod] = useState<Period>('day')
+  const [customFrom, setCustomFrom] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().split('T')[0] })
+  const [customTo, setCustomTo] = useState(() => new Date().toISOString().split('T')[0])
   const [collabFilter, setCollabFilter] = useState('all')
   const [systemFilter, setSystemFilter] = useState('all')
   const [collaborators, setCollaborators] = useState<Collaborator[]>([])
@@ -39,7 +42,7 @@ export default function SupervisorDashboard() {
     async function load() {
       setLoading(true); setError('')
       try {
-        const { from, to } = getRange(period)
+        const { from, to } = getRange(period, customFrom, customTo)
         const res = await fetch(`/api/supervisor?from=${from}&to=${to}`, { cache: 'no-store' })
         if (!res.ok) { setError('Error al cargar datos'); setLoading(false); return }
         const d = await res.json()
@@ -50,7 +53,7 @@ export default function SupervisorDashboard() {
       setLoading(false)
     }
     load()
-  }, [period])
+  }, [period, customFrom, customTo])
 
   function getName(id: string) { return collaborators.find(c => c.id === id)?.name || 'Usuario' }
   function getInitials(id: string) { return getName(id).split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() }
@@ -104,7 +107,7 @@ export default function SupervisorDashboard() {
   const maxRanking = Math.max(...ranking.map(r => r.count), 1)
 
   function handleExport() {
-    const { from, to } = getRange(period)
+    const { from, to } = getRange(period, customFrom, customTo)
     window.open(`/api/export?collaborator_id=all&name=Equipo&from=${from}&to=${to}`, '_blank')
   }
 
@@ -117,13 +120,29 @@ export default function SupervisorDashboard() {
     <div style={font}>
       {/* Period selector */}
       <div style={{ display: 'flex', background: 'var(--card)', borderRadius: 10, padding: 3, marginBottom: 10, border: '0.5px solid var(--border)' }}>
-        {(['day', 'week', 'month'] as Period[]).map(p => (
+        {(['day', 'week', 'month', 'custom'] as Period[]).map(p => (
           <button key={p} onClick={() => setPeriod(p)}
-            style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500, background: period === p ? '#1D9E75' : 'transparent', color: period === p ? 'white' : 'var(--text3)', ...font }}>
-            {p === 'day' ? 'Hoy' : p === 'week' ? 'Semana' : 'Mes'}
+            style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 500, background: period === p ? '#1D9E75' : 'transparent', color: period === p ? 'white' : 'var(--text3)', ...font }}>
+            {p === 'day' ? 'Hoy' : p === 'week' ? 'Semana' : p === 'month' ? 'Mes' : 'Personalizado'}
           </button>
         ))}
       </div>
+
+      {/* Date pickers para período personalizado */}
+      {period === 'custom' && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 3 }}>Desde</label>
+            <input type="date" value={customFrom} onChange={e => setCustomFrom(e.target.value)}
+              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '0.5px solid var(--border)', fontSize: 12, outline: 'none', background: 'var(--input-bg)', color: 'var(--text)', ...font }} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 3 }}>Hasta</label>
+            <input type="date" value={customTo} onChange={e => setCustomTo(e.target.value)}
+              style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '0.5px solid var(--border)', fontSize: 12, outline: 'none', background: 'var(--input-bg)', color: 'var(--text)', ...font }} />
+          </div>
+        </div>
+      )}
 
       {/* Filtros: colaborador + sistema */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>

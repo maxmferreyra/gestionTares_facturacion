@@ -38,6 +38,7 @@ const PRIMARY_ITEMS: NavItem[] = [
 ]
 const MORE_ITEMS: NavItem[] = [
   { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },
+  { key: 'particularidades', label: 'Particularidades', icon: 'ti-notes', external: '/particularidades' },
   { key: 'help', label: 'Ayuda', icon: 'ti-help-circle' },
 ]
 const MORE_SUPERVISOR_ITEMS: NavItem[] = [

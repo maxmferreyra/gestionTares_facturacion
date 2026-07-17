@@ -13,12 +13,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const { company_code, vendor, nf_number, boleto_number, added_by_id, added_by_name } = await req.json()
+  const { company_code, vendor, nf_number, boleto_number, due_date, added_by_id, added_by_name } = await req.json()
   if (!company_code || !vendor?.trim() || !nf_number?.trim() || !boleto_number?.trim() || !added_by_id)
     return NextResponse.json({ error: 'Faltan datos' }, { status: 400 })
 
   const { data, error } = await supabase.from('boleto_brasil')
-    .insert({ company_code, vendor: vendor.trim(), nf_number: nf_number.trim(), boleto_number: boleto_number.trim(), added_by_id, added_by_name })
+    .insert({ company_code, vendor: vendor.trim(), nf_number: nf_number.trim(), boleto_number: boleto_number.trim(), due_date: due_date || null, added_by_id, added_by_name })
     .select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json(data)
