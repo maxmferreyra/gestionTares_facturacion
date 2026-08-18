@@ -28,9 +28,7 @@ interface Props {
 
 const COLLAB_ITEMS: NavItem[] = [
   { key: 'inicio', label: 'Inicio', icon: 'ti-home-2' },
-  { key: 'daily', label: 'Tareas', icon: 'ti-clipboard-list' },
-  { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },
-  { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
+  { key: 'capacity', label: 'Capacity', icon: 'ti-chart-line', external: '/capacity' },
   { key: 'base-imponible', label: 'Base Imponible', flag: 'AR', icon: 'ti-receipt-tax', external: '/base-imponible' },
   { key: 'boleto-brasil', label: 'Boleto', flag: 'BR', icon: 'ti-barcode', external: '/boleto-brasil' },
   { key: 'particularidades', label: 'Particularidades', icon: 'ti-notes', external: '/particularidades' },

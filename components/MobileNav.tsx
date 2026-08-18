@@ -31,13 +31,11 @@ interface Props {
 // 4 accesos fijos en la barra de abajo + "Más"
 const PRIMARY_ITEMS: NavItem[] = [
   { key: 'inicio', label: 'Inicio', icon: 'ti-home-2' },
-  { key: 'daily', label: 'Tareas', icon: 'ti-clipboard-list' },
-  { key: 'invoices', label: 'Facturas', icon: 'ti-file-invoice' },
+  { key: 'capacity', label: 'Capacity', icon: 'ti-chart-line', external: '/capacity' },
   { key: 'base-imponible', label: 'B. imp.', flag: 'ar', icon: 'ti-receipt-tax', external: '/base-imponible' },
   { key: 'boleto-brasil', label: 'Boleto', flag: 'br', icon: 'ti-barcode', external: '/boleto-brasil' },
 ]
 const MORE_ITEMS: NavItem[] = [
-  { key: 'weekly', label: 'Semana', icon: 'ti-calendar-week' },
   { key: 'particularidades', label: 'Particularidades', icon: 'ti-notes', external: '/particularidades' },
   { key: 'help', label: 'Ayuda', icon: 'ti-help-circle' },
 ]
