@@ -22,6 +22,7 @@ function monthLabel(mo: string) {
   const [y, m] = mo.split('-').map(Number)
   return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
 }
+function combKey(taskKey: string, collaboratorId: string) { return `${taskKey}__${collaboratorId}` }
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
@@ -33,7 +34,11 @@ export async function GET(req: NextRequest) {
 
   const isAll = collaborator_id === 'all'
 
-  const collabName = isAll ? 'Equipo' : (await supabase.from('collaborators').select('id, name').eq('id', collaborator_id).single()).data?.name || ''
+  const { data: collabsData } = await supabase.from('collaborators').select('id, name')
+  const nameMap: Record<string, string> = {}
+  for (const c of collabsData || []) nameMap[c.id] = c.name
+  const collabName = isAll ? 'Equipo' : (nameMap[collaborator_id] || '')
+
   const { data: tasks } = await supabase.from('capacity_tasks').select('*').eq('active', true).order('sort_order')
   const { data: logs } = await fetchAllRows((from, to) => {
     let q = supabase.from('capacity_logs').select('*')
@@ -43,93 +48,110 @@ export async function GET(req: NextRequest) {
     return q
   })
 
-  // Pivots: tarea x día / semana / mes
+  const taskList = (tasks || [])
+  const taskOrder: Record<string, number> = {}
+  taskList.forEach((t, i) => { taskOrder[t.task_key] = i })
+
+  // Pivots: tarea x día / semana / mes. Cuando isAll, la clave incluye al colaborador
+  // (task_key__collaborator_id) para poder separar el volumen por persona.
   const dates = new Set<string>()
   const weeks = new Set<string>()
   const months = new Set<string>()
   const pivotDay: Record<string, Record<string, number>> = {}
   const pivotWeek: Record<string, Record<string, number>> = {}
   const pivotMonth: Record<string, Record<string, number>> = {}
+  const pairsSeen = new Map<string, { task_key: string; collaborator_id: string }>()
+
   for (const log of logs || []) {
     dates.add(log.date)
     const wk = mondayOf(log.date)
     const mo = monthOf(log.date)
     weeks.add(wk)
     months.add(mo)
-    if (!pivotDay[log.task_key]) pivotDay[log.task_key] = {}
-    pivotDay[log.task_key][log.date] = (pivotDay[log.task_key][log.date] || 0) + log.quantity
-    if (!pivotWeek[log.task_key]) pivotWeek[log.task_key] = {}
-    pivotWeek[log.task_key][wk] = (pivotWeek[log.task_key][wk] || 0) + log.quantity
-    if (!pivotMonth[log.task_key]) pivotMonth[log.task_key] = {}
-    pivotMonth[log.task_key][mo] = (pivotMonth[log.task_key][mo] || 0) + log.quantity
+    const key = isAll ? combKey(log.task_key, log.collaborator_id) : log.task_key
+    if (isAll) pairsSeen.set(key, { task_key: log.task_key, collaborator_id: log.collaborator_id })
+    if (!pivotDay[key]) pivotDay[key] = {}
+    pivotDay[key][log.date] = (pivotDay[key][log.date] || 0) + log.quantity
+    if (!pivotWeek[key]) pivotWeek[key] = {}
+    pivotWeek[key][wk] = (pivotWeek[key][wk] || 0) + log.quantity
+    if (!pivotMonth[key]) pivotMonth[key] = {}
+    pivotMonth[key][mo] = (pivotMonth[key][mo] || 0) + log.quantity
   }
   const sortedDates = Array.from(dates).sort()
   const sortedWeeks = Array.from(weeks).sort()
   const sortedMonths = Array.from(months).sort()
 
-  const wb = XLSX.utils.book_new()
-  const taskList = (tasks || [])
+  // Filas a mostrar en cada hoja: una por tarea (export individual) o una por
+  // combinación tarea+colaborador que realmente tuvo volumen (export de equipo),
+  // agrupadas por colaborador (orden alfabético) y luego por orden del catálogo.
+  type Row = { key: string; task: typeof taskList[number]; collaboratorName: string | null }
+  const rows: Row[] = isAll
+    ? Array.from(pairsSeen.values())
+        .filter(p => taskList.some(t => t.task_key === p.task_key))
+        .map(p => ({ key: combKey(p.task_key, p.collaborator_id), task: taskList.find(t => t.task_key === p.task_key), collaboratorName: nameMap[p.collaborator_id] || 'Sin nombre' } as Row))
+        .sort((a, b) => (a.collaboratorName || '').localeCompare(b.collaboratorName || '') || taskOrder[a.task.task_key] - taskOrder[b.task.task_key])
+    : taskList.map(t => ({ key: t.task_key, task: t, collaboratorName: null }))
 
-  // Sheet 1: Summary (totales del período completo)
+  const wb = XLSX.utils.book_new()
+
+  // Sheet 1: Summary (totales del período, separados por colaborador si es "todo el equipo")
+  const summaryHeader = isAll ? ['Colaborador', '#', 'Task', 'Unit', 'Standard (min)', 'Volume', 'Total Minutes'] : ['#', 'Task', 'Unit', 'Standard (min)', 'Volume', 'Total Minutes']
   const summaryRows: unknown[][] = [
     ['CAPACITY REPORT', '', `${collabName}`, `Period: ${date_from} to ${date_to}`],
     [],
-    ['#', 'Task', 'Unit', 'Standard (min)', 'Volume', 'Total Minutes'],
+    summaryHeader,
   ]
   let grandTotal = 0
-  taskList.forEach((t, i) => {
-    const volume = Object.values(pivotDay[t.task_key] || {}).reduce((s, v) => s + v, 0)
+  const byCollabTotal: Record<string, number> = {}
+  rows.forEach((r, i) => {
+    const t = r.task
+    const volume = Object.values(pivotDay[r.key] || {}).reduce((s, v) => s + v, 0)
     const total = volume * t.standard_minutes
     grandTotal += total
+    if (isAll) byCollabTotal[r.collaboratorName!] = (byCollabTotal[r.collaboratorName!] || 0) + total
     const unit = t.unit === 'per_document' ? 'per document' : `1=${t.unit_minutes}min`
-    summaryRows.push([i + 1, t.name, unit, t.standard_minutes, volume || '', Math.round(total)])
+    const line = isAll ? [r.collaboratorName, i + 1, t.name, unit, t.standard_minutes, volume || '', Math.round(total)]
+                        : [i + 1, t.name, unit, t.standard_minutes, volume || '', Math.round(total)]
+    summaryRows.push(line)
   })
   summaryRows.push([])
-  summaryRows.push(['', '', '', 'TOTAL', '', Math.round(grandTotal)])
-  summaryRows.push(['', '', '', 'TOTAL HOURS', '', +(grandTotal / 60).toFixed(2)])
+  if (isAll) {
+    summaryRows.push(['', '', '', '', 'TOTAL POR COLABORADOR (min)', ''])
+    Object.entries(byCollabTotal).sort((a, b) => a[0].localeCompare(b[0])).forEach(([name, mins]) => {
+      summaryRows.push(['', '', name, '', '', Math.round(mins), +(mins / 60).toFixed(2)])
+    })
+    summaryRows.push([])
+  }
+  const totalPad = isAll ? ['', '', '', '', 'TOTAL', ''] : ['', '', '', 'TOTAL', '']
+  const hoursPad = isAll ? ['', '', '', '', 'TOTAL HOURS', ''] : ['', '', '', 'TOTAL HOURS', '']
+  summaryRows.push([...totalPad, Math.round(grandTotal)])
+  summaryRows.push([...hoursPad, +(grandTotal / 60).toFixed(2)])
 
   const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows)
-  wsSummary['!cols'] = [{ wch: 4 }, { wch: 55 }, { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 14 }]
+  wsSummary['!cols'] = isAll
+    ? [{ wch: 20 }, { wch: 4 }, { wch: 55 }, { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 14 }]
+    : [{ wch: 4 }, { wch: 55 }, { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 14 }]
   XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary')
 
-  // Sheet 2: Por día
-  const dayHeader = ['Task', 'Unit', ...sortedDates]
-  const dayRows: unknown[][] = [dayHeader]
-  taskList.forEach(t => {
-    const unit = t.unit === 'per_document' ? 'per document' : `1=${t.unit_minutes}min`
-    const row: unknown[] = [t.name, unit]
-    sortedDates.forEach(d => row.push(pivotDay[t.task_key]?.[d] || ''))
-    dayRows.push(row)
-  })
-  const wsDay = XLSX.utils.aoa_to_sheet(dayRows)
-  wsDay['!cols'] = [{ wch: 55 }, { wch: 14 }, ...sortedDates.map(() => ({ wch: 11 }))]
-  XLSX.utils.book_append_sheet(wb, wsDay, 'Por dia')
+  function buildDetailSheet(pivot: Record<string, Record<string, number>>, periods: string[], periodLabels: string[], sheetName: string) {
+    const header = isAll ? ['Colaborador', 'Task', 'Unit', ...periodLabels] : ['Task', 'Unit', ...periodLabels]
+    const detailRows: unknown[][] = [header]
+    rows.forEach(r => {
+      const t = r.task
+      const unit = t.unit === 'per_document' ? 'per document' : `1=${t.unit_minutes}min`
+      const row: unknown[] = isAll ? [r.collaboratorName, t.name, unit] : [t.name, unit]
+      periods.forEach(p => row.push(pivot[r.key]?.[p] || ''))
+      detailRows.push(row)
+    })
+    const ws = XLSX.utils.aoa_to_sheet(detailRows)
+    const baseCols = isAll ? [{ wch: 20 }, { wch: 55 }, { wch: 14 }] : [{ wch: 55 }, { wch: 14 }]
+    ws['!cols'] = [...baseCols, ...periods.map(() => ({ wch: 14 }))]
+    XLSX.utils.book_append_sheet(wb, ws, sheetName)
+  }
 
-  // Sheet 3: Por semana
-  const weekHeader = ['Task', 'Unit', ...sortedWeeks.map(weekLabel)]
-  const weekRows: unknown[][] = [weekHeader]
-  taskList.forEach(t => {
-    const unit = t.unit === 'per_document' ? 'per document' : `1=${t.unit_minutes}min`
-    const row: unknown[] = [t.name, unit]
-    sortedWeeks.forEach(w => row.push(pivotWeek[t.task_key]?.[w] || ''))
-    weekRows.push(row)
-  })
-  const wsWeek = XLSX.utils.aoa_to_sheet(weekRows)
-  wsWeek['!cols'] = [{ wch: 55 }, { wch: 14 }, ...sortedWeeks.map(() => ({ wch: 16 }))]
-  XLSX.utils.book_append_sheet(wb, wsWeek, 'Por semana')
-
-  // Sheet 4: Por mes
-  const monthHeader = ['Task', 'Unit', ...sortedMonths.map(monthLabel)]
-  const monthRows: unknown[][] = [monthHeader]
-  taskList.forEach(t => {
-    const unit = t.unit === 'per_document' ? 'per document' : `1=${t.unit_minutes}min`
-    const row: unknown[] = [t.name, unit]
-    sortedMonths.forEach(m => row.push(pivotMonth[t.task_key]?.[m] || ''))
-    monthRows.push(row)
-  })
-  const wsMonth = XLSX.utils.aoa_to_sheet(monthRows)
-  wsMonth['!cols'] = [{ wch: 55 }, { wch: 14 }, ...sortedMonths.map(() => ({ wch: 12 }))]
-  XLSX.utils.book_append_sheet(wb, wsMonth, 'Por mes')
+  buildDetailSheet(pivotDay, sortedDates, sortedDates, 'Por dia')
+  buildDetailSheet(pivotWeek, sortedWeeks, sortedWeeks.map(weekLabel), 'Por semana')
+  buildDetailSheet(pivotMonth, sortedMonths, sortedMonths.map(monthLabel), 'Por mes')
 
   const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' })
   const name = `${(collabName || 'Capacity').replace(/\s+/g, '_')}_${date_from}_${date_to}.xlsx`
