@@ -27,9 +27,15 @@ export default function CapacityPage() {
   const [currentDate, setCurrentDate] = useState(localToday())
   const [loading, setLoading] = useState(true)
   const [bulkTask, setBulkTask] = useState<CTask | null>(null)
+  const [bulkMode, setBulkMode] = useState<'add' | 'subtract'>('add')
   const [bulkN, setBulkN] = useState('')
   const [saving, setSaving] = useState(false)
   const [accordionOpen, setAccordionOpen] = useState(true)
+  const [showExport, setShowExport] = useState(false)
+  const [exportPeriod, setExportPeriod] = useState<'day' | 'week' | 'month' | 'custom'>('week')
+  const [exportFrom, setExportFrom] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 1); return d.toISOString().split('T')[0] })
+  const [exportTo, setExportTo] = useState(() => new Date().toISOString().split('T')[0])
+  const [exportScope, setExportScope] = useState<'mine' | 'all'>('mine')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   function resetInactivity() {
@@ -99,6 +105,43 @@ export default function CapacityPage() {
     }
   }
 
+  // Resta masiva — simétrica a la carga masiva, por si se cargaron toques de más por error.
+  async function subtractTouches(task: CTask, qty: number) {
+    if (!collab || qty < 1) return
+    const log = logs.find(l => l.task_key === task.task_key)
+    if (!log || log.quantity <= 0) return
+    const newQty = Math.max(0, log.quantity - qty)
+    setSaving(true)
+    const res = await fetch(`/api/capacity-logs/${log.id}`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: newQty }),
+    })
+    const data = await res.json()
+    setSaving(false)
+    if (res.ok) {
+      if (data.deleted) setLogs(prev => prev.filter(l => l.id !== log.id))
+      else setLogs(prev => prev.map(l => l.id === log.id ? data : l))
+    }
+  }
+
+  function getExportRange(period: 'day' | 'week' | 'month' | 'custom'): { from: string; to: string } {
+    const now = new Date()
+    const to = now.toISOString().split('T')[0]
+    let from = to
+    if (period === 'week') { const d = new Date(now); d.setDate(d.getDate() - 6); from = d.toISOString().split('T')[0] }
+    else if (period === 'month') { from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0] }
+    else if (period === 'custom') { return { from: exportFrom, to: exportTo } }
+    return { from, to }
+  }
+
+  function handleExport() {
+    if (!collab) return
+    const { from, to } = getExportRange(exportPeriod)
+    const scopeId = (collab.role === 'supervisor' && exportScope === 'all') ? 'all' : collab.id
+    window.open(`/api/capacity-export?collaborator_id=${scopeId}&date_from=${from}&date_to=${to}`, '_blank')
+    setShowExport(false)
+  }
+
   if (!collab) return null
 
   const today = localToday()
@@ -125,9 +168,15 @@ export default function CapacityPage() {
       <MobileNav collaborator={collab} activeKey="/capacity" onNavigate={key => router.push(`/dashboard?view=${key}`)} onLogout={logout} />
 
       <div className="pt-14 pb-20 lg:pt-0 lg:pb-0" style={{ flex: 1, minWidth: 0, maxWidth: 800 }}>
-        <div style={{ marginBottom: 16 }}>
-          <h1 style={{ fontSize: 19, fontWeight: 600, color: 'var(--text)' }}>Capacity</h1>
-          <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 300, marginTop: 2 }}>Daily task & volume tracking</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, gap: 10 }}>
+          <div>
+            <h1 style={{ fontSize: 19, fontWeight: 600, color: 'var(--text)' }}>Capacity</h1>
+            <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 300, marginTop: 2 }}>Daily task & volume tracking</div>
+          </div>
+          <button onClick={() => setShowExport(true)} title="Exportar volumen a Excel"
+            style={{ width: 36, height: 36, borderRadius: 10, border: 'none', background: 'var(--card)', fontSize: 14, cursor: 'pointer', color: 'var(--success)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(11,43,38,0.08)', flexShrink: 0 }}>
+            <i className="ti ti-file-spreadsheet" />
+          </button>
         </div>
 
         {/* Date nav */}
@@ -188,7 +237,12 @@ export default function CapacityPage() {
                       <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', minWidth: 22, textAlign: 'center', fontFamily: "'JetBrains Mono', monospace" }}>{qty}</span>
                       <button onClick={() => addTouches(t, 1)} disabled={saving} style={{ width: 28, height: 28, borderRadius: 7, border: '0.5px solid var(--border)', background: 'var(--card)', fontSize: 16, cursor: 'pointer', color: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>+</button>
                       {isPerdoc && (
-                        <button onClick={() => { setBulkTask(t); setBulkN('') }} style={{ width: 28, height: 28, borderRadius: 7, border: '0.5px solid var(--brand-tint)', background: 'var(--brand-tint)', fontSize: 9, cursor: 'pointer', color: 'var(--brand)', fontWeight: 700, ...font }}>xN</button>
+                        <>
+                          <button onClick={() => { setBulkTask(t); setBulkMode('add'); setBulkN('') }} title="Sumar varios"
+                            style={{ width: 26, height: 28, borderRadius: 7, border: '0.5px solid var(--brand-tint)', background: 'var(--brand-tint)', fontSize: 8.5, cursor: 'pointer', color: 'var(--brand)', fontWeight: 700, ...font }}>+N</button>
+                          <button onClick={() => { setBulkTask(t); setBulkMode('subtract'); setBulkN('') }} disabled={qty === 0} title="Restar varios"
+                            style={{ width: 26, height: 28, borderRadius: 7, border: '0.5px solid var(--error-bg)', background: 'var(--error-bg)', fontSize: 8.5, cursor: qty === 0 ? 'not-allowed' : 'pointer', color: 'var(--error)', fontWeight: 700, opacity: qty === 0 ? 0.5 : 1, ...font }}>−N</button>
+                        </>
                       )}
                     </div>
                   </div>
@@ -221,18 +275,91 @@ export default function CapacityPage() {
         )}
       </div>
 
-      {/* Bulk modal */}
-      {bulkTask && (
-        <div onClick={() => setBulkTask(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(11,43,38,0.4)', zIndex: 99, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card)', borderRadius: 16, padding: 20, width: 300, ...font }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Bulk load</div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 14, lineHeight: 1.4 }}>{bulkTask.name}</div>
-            <input autoFocus value={bulkN} onChange={e => setBulkN(e.target.value.replace(/\D/g, ''))} type="text" inputMode="numeric" placeholder="How many?" style={{ ...inp, marginBottom: 12 }}
-              onKeyDown={e => { if (e.key === 'Enter' && parseInt(bulkN) > 0) { addTouches(bulkTask, parseInt(bulkN)); setBulkTask(null) } }} />
+      {/* Bulk modal — sumar o restar varios toques a la vez */}
+      {bulkTask && (() => {
+        const currentQty = logByKey[bulkTask.task_key]?.quantity || 0
+        const isSubtract = bulkMode === 'subtract'
+        function confirmBulk() {
+          const n = parseInt(bulkN)
+          if (bulkTask && n > 0) {
+            if (isSubtract) subtractTouches(bulkTask, n)
+            else addTouches(bulkTask, n)
+            setBulkTask(null)
+          }
+        }
+        return (
+          <div onClick={() => setBulkTask(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(11,43,38,0.4)', zIndex: 99, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card)', borderRadius: 16, padding: 20, width: 300, ...font }}>
+              <div style={{ display: 'flex', background: 'var(--bg)', borderRadius: 9, padding: 3, marginBottom: 14, gap: 2 }}>
+                <button onClick={() => setBulkMode('add')} style={{ flex: 1, padding: '6px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, background: !isSubtract ? 'var(--brand)' : 'transparent', color: !isSubtract ? '#fff' : 'var(--text3)', ...font }}>Sumar</button>
+                <button onClick={() => setBulkMode('subtract')} style={{ flex: 1, padding: '6px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, background: isSubtract ? 'var(--error)' : 'transparent', color: isSubtract ? '#fff' : 'var(--text3)', ...font }}>Restar</button>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>{isSubtract ? 'Resta masiva' : 'Carga masiva'}</div>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: isSubtract ? 4 : 14, lineHeight: 1.4 }}>{bulkTask.name}</div>
+              {isSubtract && <div style={{ fontSize: 11, color: 'var(--text4)', marginBottom: 14 }}>Actualmente cargados: <strong style={{ color: 'var(--text)' }}>{currentQty}</strong></div>}
+              <input autoFocus value={bulkN} onChange={e => setBulkN(e.target.value.replace(/\D/g, ''))} type="text" inputMode="numeric" placeholder="How many?" style={{ ...inp, marginBottom: 12 }}
+                onKeyDown={e => { if (e.key === 'Enter') confirmBulk() }} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={confirmBulk}
+                  style={{ flex: 1, padding: '9px', borderRadius: 9, border: 'none', background: isSubtract ? 'var(--error)' : 'var(--brand)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', ...font }}>
+                  {isSubtract ? 'Restar' : 'Confirm'}
+                </button>
+                <button onClick={() => setBulkTask(null)}
+                  style={{ padding: '9px 14px', borderRadius: 9, border: '0.5px solid var(--border)', background: 'transparent', fontSize: 13, cursor: 'pointer', color: 'var(--text3)', ...font }}>Cancel</button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Export modal — descargar el volumen cargado por día / semana / mes */}
+      {showExport && (
+        <div onClick={() => setShowExport(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(11,43,38,0.4)', zIndex: 99, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'var(--card)', borderRadius: 16, padding: 20, width: 320, ...font }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <i className="ti ti-file-spreadsheet" style={{ fontSize: 15, color: 'var(--success)' }} /> Exportar volumen
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 14, lineHeight: 1.4 }}>El Excel incluye hojas separadas por día, semana y mes.</div>
+
+            <div style={{ display: 'flex', background: 'var(--bg)', borderRadius: 9, padding: 3, marginBottom: 12, gap: 2 }}>
+              {(['day', 'week', 'month', 'custom'] as const).map(p => (
+                <button key={p} onClick={() => setExportPeriod(p)}
+                  style={{ flex: 1, padding: '6px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 10.5, fontWeight: 600, background: exportPeriod === p ? 'var(--brand)' : 'transparent', color: exportPeriod === p ? '#fff' : 'var(--text3)', ...font }}>
+                  {p === 'day' ? 'Hoy' : p === 'week' ? '7 días' : p === 'month' ? 'Mes' : 'A medida'}
+                </button>
+              ))}
+            </div>
+
+            {exportPeriod === 'custom' && (
+              <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 3 }}>Desde</label>
+                  <input type="date" value={exportFrom} onChange={e => setExportFrom(e.target.value)} style={inp} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 10, color: 'var(--text3)', fontWeight: 500, display: 'block', marginBottom: 3 }}>Hasta</label>
+                  <input type="date" value={exportTo} onChange={e => setExportTo(e.target.value)} style={inp} />
+                </div>
+              </div>
+            )}
+
+            {collab.role === 'supervisor' && (
+              <div style={{ display: 'flex', background: 'var(--bg)', borderRadius: 9, padding: 3, marginBottom: 16, gap: 2 }}>
+                {(['mine', 'all'] as const).map(s => (
+                  <button key={s} onClick={() => setExportScope(s)}
+                    style={{ flex: 1, padding: '6px 0', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, background: exportScope === s ? 'var(--brand)' : 'transparent', color: exportScope === s ? '#fff' : 'var(--text3)', ...font }}>
+                    {s === 'mine' ? 'Solo yo' : 'Todo el equipo'}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { if (parseInt(bulkN) > 0) { addTouches(bulkTask, parseInt(bulkN)); setBulkTask(null) } }}
-                style={{ flex: 1, padding: '9px', borderRadius: 9, border: 'none', background: 'var(--brand)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', ...font }}>Confirm</button>
-              <button onClick={() => setBulkTask(null)}
+              <button onClick={handleExport}
+                style={{ flex: 1, padding: '9px', borderRadius: 9, border: 'none', background: 'var(--success)', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, ...font }}>
+                <i className="ti ti-download" style={{ fontSize: 14 }} /> Descargar Excel
+              </button>
+              <button onClick={() => setShowExport(false)}
                 style={{ padding: '9px 14px', borderRadius: 9, border: '0.5px solid var(--border)', background: 'transparent', fontSize: 13, cursor: 'pointer', color: 'var(--text3)', ...font }}>Cancel</button>
             </div>
           </div>

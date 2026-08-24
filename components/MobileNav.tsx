@@ -41,8 +41,8 @@ const MORE_ITEMS: NavItem[] = [
 ]
 const MORE_SUPERVISOR_ITEMS: NavItem[] = [
   { key: 'supervisor', label: 'Equipo', icon: 'ti-chart-bar' },
-  { key: 'productividad', label: 'Productividad', icon: 'ti-gauge', external: '/productividad' },
   { key: 'users', label: 'Usuarios', icon: 'ti-users-group' },
+  { key: 'catalog', label: 'Catálogo - Capacity', icon: 'ti-chart-line' },
 ]
 
 export default function MobileNav({ collaborator, activeKey, onNavigate, onAvatarClick, onLogout, onExportExcel }: Props) {

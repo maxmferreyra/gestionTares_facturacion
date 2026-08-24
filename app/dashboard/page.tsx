@@ -10,7 +10,7 @@ import InvoiceActions from '@/components/InvoiceActions'
 import HelpSection from '@/components/HelpSection'
 import SupervisorDashboard from '@/components/SupervisorDashboard'
 import UserManagement from '@/components/UserManagement'
-import TaskCatalogManager from '@/components/TaskCatalogManager'
+import CapacityCatalogManager from '@/components/CapacityCatalogManager'
 import InicioCalendar from '@/components/InicioCalendar'
 import InicioSummary from '@/components/InicioSummary'
 import Popups from '@/components/Popups'
@@ -186,7 +186,7 @@ function DashboardContent() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: 10 }}>
           <div>
             <div style={{ fontSize: 19, fontWeight: 600, color: 'var(--text)' }}>
-              {view === 'inicio' ? 'Inicio' : view === 'daily' ? `Hola, ${collaborator.name.split(' ')[0]} 👋` : view === 'weekly' ? 'Resumen semanal' : view === 'invoices' ? 'Facturas' : view === 'help' ? 'Ayuda' : view === 'supervisor' ? 'Equipo' : 'Usuarios'}
+              {view === 'inicio' ? 'Inicio' : view === 'daily' ? `Hola, ${collaborator.name.split(' ')[0]} 👋` : view === 'weekly' ? 'Resumen semanal' : view === 'invoices' ? 'Facturas' : view === 'help' ? 'Ayuda' : view === 'supervisor' ? 'Equipo' : view === 'catalog' ? 'Catálogo - Capacity' : 'Usuarios'}
             </div>
             <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 300, marginTop: 2 }}>
               {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -300,7 +300,7 @@ function DashboardContent() {
         {view === 'help' && <HelpSection />}
         {view === 'supervisor' && isSupervisor && <SupervisorDashboard />}
         {view === 'users' && isSupervisor && <UserManagement currentUserId={collaborator.id} />}
-        {view === 'catalog' && isSupervisor && <TaskCatalogManager />}
+        {view === 'catalog' && isSupervisor && <CapacityCatalogManager />}
       </div>
     </div>
   )

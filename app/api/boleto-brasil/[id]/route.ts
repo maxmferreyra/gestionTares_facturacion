@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { localToday } from '@/lib/types'
+import { addCapacityTouches } from '@/lib/capacity'
 
 type Ctx = { params: Promise<{ id: string }> }
 
@@ -19,6 +20,11 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     collaborator_id: loaded_by_id, system: 'sap',
     action: 'brasil_mod_reference_boleto', date, reason: null,
   })
+
+  // +1 toque automático en la línea de Capacity "Brazil - Boleto reference update"
+  // (task_key 'br_boleto') para no tener que cargarlo a mano en Capacity.
+  await addCapacityTouches(loaded_by_id, 'br_boleto', date)
+
   return NextResponse.json(data)
 }
 

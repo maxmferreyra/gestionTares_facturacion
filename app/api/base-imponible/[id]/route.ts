@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
+import { addCapacityTouches } from '@/lib/capacity'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -41,9 +42,13 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       reason: null,
     })
 
-  if (actionError) {
-    // La corrección ya se guardó; avisamos si el toque no pudo registrarse, sin revertir.
-    return NextResponse.json({ ...updated, _actionWarning: actionError.message })
+  // 3) +1 toque automático en la línea de Capacity "Argentina - Tax base (WHT) correction"
+  //    (task_key 'arg_wht') para no tener que cargarlo a mano en Capacity.
+  const { error: capacityError } = await addCapacityTouches(corrected_by_id, 'arg_wht', date)
+
+  if (actionError || capacityError) {
+    // La corrección ya se guardó; avisamos si algún registro secundario no pudo escribirse, sin revertir.
+    return NextResponse.json({ ...updated, _actionWarning: actionError?.message, _capacityWarning: capacityError?.message })
   }
 
   return NextResponse.json(updated)
